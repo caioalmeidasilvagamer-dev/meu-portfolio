@@ -8,48 +8,12 @@ import {
   MeshTransmissionMaterial,
   Environment,
   Image as DreiImage,
+  useGLTF,
 } from "@react-three/drei";
 import * as THREE from "three";
 
 /* ------------------------------------------------------------------ */
-/* 1. Geometria facetada, alongada na vertical e mais detalhada         */
-/* ------------------------------------------------------------------ */
-function useCrystalGeometry(seed = 1) {
-  return useMemo(() => {
-    // detail 2 = muito mais facetas (mais "diversificado" nos vértices)
-    const geo = new THREE.IcosahedronGeometry(1, 2);
-    const pos = geo.attributes.position;
-
-    const rand = (i, offset = 0) => {
-      const x = Math.sin((i + offset) * 12.9898 * seed) * 43758.5453;
-      return x - Math.floor(x);
-    };
-
-    for (let i = 0; i < pos.count; i++) {
-      const vx = pos.getX(i);
-      const vy = pos.getY(i);
-      const vz = pos.getZ(i);
-
-      // ruído diferente por eixo = facetas mais irregulares/realistas
-      const nx = rand(i, 0) * 0.22 - 0.11;
-      const ny = rand(i, 50) * 0.15 - 0.07;
-      const nz = rand(i, 100) * 0.22 - 0.11;
-
-      // alongamento vertical: multiplica Y por 1.6 ANTES do ruído
-      pos.setXYZ(
-        i,
-        (vx + vx * nx) * 0.75,
-        vy * 1.6 + vy * ny,
-        (vz + vz * nz) * 0.75
-      );
-    }
-    geo.computeVertexNormals();
-    return geo;
-  }, [seed]);
-}
-
-/* ------------------------------------------------------------------ */
-/* 2. Textura de ruído pra dar o aspecto "fosco" (não-liso) à superfície */
+/* 1. Textura de ruído pra dar o aspecto "fosco" (não-liso) à superfície */
 /* ------------------------------------------------------------------ */
 function useNoiseTexture() {
   return useMemo(() => {
@@ -74,12 +38,31 @@ function useNoiseTexture() {
 }
 
 /* ------------------------------------------------------------------ */
-/* 3. Um cristal individual: casca de vidro fosco + foto presa dentro   */
+/* 2. Um cristal individual: casca de vidro fosco + foto presa dentro   */
 /* ------------------------------------------------------------------ */
 function Crystal({ imageUrl, seed = 1, label }) {
   const groupRef = useRef();
-  const geometry = useCrystalGeometry(seed);
+  const { nodes } = useGLTF("/models/cristal.glb");
+  const geometry =
+    nodes.Mesh1?.geometry ||
+    nodes.geometry_0?.geometry ||
+    Object.values(nodes).find((n) => n?.geometry)?.geometry;
   const noiseMap = useNoiseTexture();
+
+  const { transformRotation, transformScale } = useMemo(() => {
+    const rand = (offset) => {
+      const x = Math.sin((seed + offset) * 12.9898) * 43758.5453;
+      return (x - Math.floor(x)) * 2 - 1;
+    };
+    return {
+      transformRotation: [
+        rand(1) * 0.2,
+        rand(2) * Math.PI,
+        rand(3) * 0.2,
+      ],
+      transformScale: 1 + rand(4) * 0.15,
+    };
+  }, [seed]);
 
   useFrame((state) => {
     // rotação lenta e flutuação sutil, dá vida sem distrair
@@ -101,7 +84,7 @@ function Crystal({ imageUrl, seed = 1, label }) {
       />
 
       {/* A casca de cristal em si */}
-      <mesh geometry={geometry} scale={1}>
+      <mesh geometry={geometry} scale={transformScale} rotation={transformRotation}>
         <MeshTransmissionMaterial
           // --- parâmetros ajustados pra ficar cinza/translúcido, tipo gelo, não preto ---
           roughness={0.35}
@@ -118,8 +101,8 @@ function Crystal({ imageUrl, seed = 1, label }) {
           attenuationColor="#dfe7ea"
           attenuationDistance={1.2}
           color="#f0f4f6"
-          resolution={1024}
-          samples={10}
+          resolution={256}
+          samples={4}
           backside
         />
       </mesh>
@@ -135,7 +118,7 @@ function Crystal({ imageUrl, seed = 1, label }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 4. Carrossel: vários cristais, desliza no eixo X                    */
+/* 3. Carrossel: vários cristais, desliza no eixo X                    */
 /* ------------------------------------------------------------------ */
 
 // Fica DENTRO do Canvas, por isso pode usar useFrame
@@ -189,3 +172,5 @@ export default function CrystalCarousel({ items }) {
     </div>
   );
 }
+
+useGLTF.preload("/models/cristal.glb");
