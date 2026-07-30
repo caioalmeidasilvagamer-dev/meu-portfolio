@@ -13,6 +13,7 @@ import {
   Html,
 } from "@react-three/drei";
 import * as THREE from "three";
+import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 /* ------------------------------------------------------------------ */
 /* 1. Textura de ruído pra dar o aspecto "fosco" (não-liso) à superfície */
@@ -114,6 +115,11 @@ const ScanWireframeShader = {
 
     varying vec3 vPosition;
 
+    // Efeito de iridescência de filme fino / óleo sobre a água (arco-íris suave)
+    vec3 oilSlickRainbow(float t) {
+      return 0.55 + 0.45 * cos(6.28318 * (vec3(0.0, 0.33, 0.67) + t));
+    }
+
     void main() {
       float totalAlpha = 0.0;
 
@@ -135,30 +141,34 @@ const ScanWireframeShader = {
         vec3  toFragNorm = toFrag / dist;
 
         // ---- Filtro do cone em V ----
-        // A onda só é visível ATRÁS do ponto de origem (direção oposta à velocidade)
         float cosToBack = dot(toFragNorm, -velNorm);
         if (cosToBack < cos(uWakeAngle)) continue; // fora do cone
 
         // ---- Anel de onda se expandindo ----
-        // O raio cresce com o tempo (velocidade = uWakeSpread unidades/segundo)
         float expectedRadius = age * uWakeSpread;
         float ringDist       = abs(dist - expectedRadius);
 
-        // Espessura fina da frente de onda
-        float intensity = smoothstep(0.045, 0.0, ringDist);
+        // Espessura encorpada para o wireframe ficar bem definido e visível
+        float intensity = smoothstep(0.06, 0.0, ringDist);
 
-        // Fade suave na borda do cone (evita corte abrupto) e ao longo do tempo
+        // Fade suave na borda do cone e ao longo do tempo
         float coneFade = smoothstep(cos(uWakeAngle), cos(uWakeAngle * 0.5), cosToBack);
         intensity *= fade * coneFade;
 
         totalAlpha = max(totalAlpha, intensity);
       }
 
-      // Multiplicador global de entrada/saída do mouse
-      totalAlpha *= uHoverActive;
+      // Multiplicador global de entrada/saída do mouse (mais opaco)
+      totalAlpha *= uHoverActive * 1.5;
 
       if (totalAlpha <= 0.001) discard;
-      gl_FragColor = vec4(uColor, clamp(totalAlpha, 0.0, 0.95));
+
+      // Reflexo iridescente de filme de óleo em água (arco-íris sutil e elegante)
+      float iridPhase = vPosition.x * 0.7 + vPosition.y * 1.1 + vPosition.z * 0.7;
+      vec3 iridColor = oilSlickRainbow(iridPhase);
+      vec3 finalColor = mix(uColor, iridColor, 0.45);
+
+      gl_FragColor = vec4(finalColor, clamp(totalAlpha, 0.0, 0.98));
     }
   `,
 };
@@ -197,7 +207,10 @@ function Crystal({ seed = 1, label }) {
 
   const wireframeGeo = useMemo(() => {
     if (!geometry) return null;
-    return new THREE.WireframeGeometry(geometry);
+    // 1. Agrupa vértices próximos para criar triângulos/polígonos mais amplos e limpos
+    const merged = mergeVertices(geometry.clone(), 0.08);
+    // 2. Destaca as arestas estruturais principais (eliminando o excesso de micro-triângulos)
+    return new THREE.EdgesGeometry(merged, 15);
   }, [geometry]);
 
   const uniforms = useMemo(
