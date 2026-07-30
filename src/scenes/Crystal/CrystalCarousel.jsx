@@ -73,31 +73,31 @@ function useInnerBlobGeometry(radius = 1) {
 function StudioParticles() {
   return (
     <group>
-      {/* Camada 1: Partículas cinza-chumbo suaves */}
+      {/* Camada 1: Partículas brancas suaves e pequenas */}
       <Sparkles
-        count={90}
+        count={80}
         scale={[14, 8, 10]}
-        size={3.0}
+        size={2.5}
         speed={0.3}
-        opacity={0.6}
-        color="#475569"
+        opacity={0.7}
+        color="#ffffff"
       />
-      {/* Camada 2: Partículas prateadas intermediárias */}
+      {/* Camada 2: Partículas brancas intermediárias */}
       <Sparkles
-        count={75}
+        count={70}
         scale={[16, 10, 12]}
-        size={4.5}
+        size={4.0}
         speed={0.2}
-        opacity={0.5}
-        color="#94a3b8"
+        opacity={0.6}
+        color="#ffffff"
       />
       {/* Camada 3: Partículas brancas reluzentes */}
       <Sparkles
         count={80}
         scale={[12, 7, 8]}
-        size={2.5}
+        size={2.8}
         speed={0.45}
-        opacity={0.85}
+        opacity={0.9}
         color="#ffffff"
       />
     </group>
@@ -267,16 +267,17 @@ function Crystal({ seed = 1, label }) {
       <group ref={groupRef}>
         {/* 1. Brilho interno suave — luz que irradia de dentro do gelo */}
         {baseGeometry && (
-          <group ref={innerGroupRef} scale={transformScale * 0.22} rotation={transformRotation}>
-            <mesh geometry={innerGeometry}>
+          <group ref={innerGroupRef} scale={transformScale * 0.16} rotation={transformRotation} renderOrder={-1}>
+            <mesh geometry={innerGeometry} renderOrder={-1}>
               <meshStandardMaterial
-                color="#e2e8ec"
-                roughness={0.9}
+                color="#cfd7e0"
+                roughness={0.85}
                 metalness={0.0}
-                emissive="#dde8ef"
-                emissiveIntensity={0.7}
+                emissive="#b8c6d4"
+                emissiveIntensity={0.55}
                 transparent
-                opacity={0.85}
+                opacity={0.88}
+                depthWrite={true}
               />
             </mesh>
             <pointLight position={[0, 0, 0]} intensity={4} distance={3.5} color="#ffffff" />
@@ -304,8 +305,8 @@ function Crystal({ seed = 1, label }) {
         >
           <MeshTransmissionMaterial
             transmission={0.98}
-            roughness={0.3}
-            thickness={1.0}
+            roughness={0.28}
+            thickness={1.1}
             ior={1.31}
             chromaticAberration={0.015}
             anisotropy={0.2}
@@ -314,11 +315,11 @@ function Crystal({ seed = 1, label }) {
             temporalDistortion={0.02}
             normalMap={noiseMap}
             normalScale={new THREE.Vector2(0.005, 0.005)}
-            clearcoat={0.2}
-            clearcoatRoughness={0.35}
-            attenuationColor="#b4bcc4"
-            attenuationDistance={2.9}
-            color="#e4e8eb"
+            clearcoat={0.5}
+            clearcoatRoughness={0.2}
+            attenuationColor="#9ca6b2"
+            attenuationDistance={2.5}
+            color="#dce2e8"
             resolution={512}
             samples={6}
             backside
