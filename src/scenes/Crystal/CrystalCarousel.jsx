@@ -1,16 +1,17 @@
 // CrystalCarousel.jsx
-// Carrossel de Cristais 3D com Viewfinder HUD Fixo + Zoom de Câmera (Dolly-Zoom) e Transição de Seção
+// Carrossel de Cristais 3D com Voo de Câmera Contínuo (Sem Cortes) para Dentro do Cristal
+// e Ambiente 3D Interno Facetado com Espelhamento e Refração
 
 import { Suspense, useState, useCallback, useRef } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF } from "@react-three/drei";
 import gsap from "gsap";
 import CrystalMesh from "./components/CrystalMesh";
-import ViewfinderFrame from "./components/ViewfinderFrame";
+import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
 import { crystalConfig } from "./config/crystalConfig";
 
 /* ------------------------------------------------------------------ */
-/* 1. Controlador de Câmera (Dolly-Zoom com GSAP)                      */
+/* 1. Controlador de Câmera — Voo Fluido para Dentro do Cristal        */
 /* ------------------------------------------------------------------ */
 function CameraController({ zoomTriggerRef }) {
   const { camera } = useThree();
@@ -18,16 +19,48 @@ function CameraController({ zoomTriggerRef }) {
   zoomTriggerRef.current = {
     zoomIn: (onComplete) => {
       gsap.timeline()
-        .to(camera.position, { z: 0.35, duration: 1.1, ease: "power3.in" })
-        .to(camera, { fov: 20, duration: 1.1, onUpdate: () => camera.updateProjectionMatrix() }, 0)
+        .to(camera.position, {
+          x: 0,
+          y: 0,
+          z: 0.05,
+          duration: 1.8,
+          ease: "power2.inOut",
+        })
+        .to(
+          camera,
+          {
+            near: 0.001,
+            fov: 65,
+            duration: 1.8,
+            ease: "power2.inOut",
+            onUpdate: () => camera.updateProjectionMatrix(),
+          },
+          0
+        )
         .call(() => {
           if (onComplete) onComplete();
         });
     },
     zoomOut: (onComplete) => {
       gsap.timeline()
-        .to(camera.position, { z: 5, duration: 1.0, ease: "power3.out" })
-        .to(camera, { fov: 45, duration: 1.0, onUpdate: () => camera.updateProjectionMatrix() }, 0)
+        .to(camera.position, {
+          x: 0,
+          y: 0,
+          z: 5.0,
+          duration: 1.4,
+          ease: "power2.inOut",
+        })
+        .to(
+          camera,
+          {
+            near: 0.1,
+            fov: 45,
+            duration: 1.4,
+            ease: "power2.inOut",
+            onUpdate: () => camera.updateProjectionMatrix(),
+          },
+          0
+        )
         .call(() => {
           if (onComplete) onComplete();
         });
@@ -58,7 +91,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const [isHovered, setIsHovered] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const zoomTriggerRef = useRef(null);
-  const frostRef = useRef(null);
+  const lensPassRef = useRef(null);
 
   const defaultItems = [
     {
@@ -66,21 +99,27 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       label: "PORTFOLIO_CO_01",
       sublabel: "PUDGY PENGUINS",
       modelPath: "/models/cristal.glb",
-      description: "Coleção exclusiva e ecossistema digital imersivo.",
+      description:
+        "Coleção exclusiva e ecossistema digital imersivo em blockchain. Uma experiência visual de alto impacto construída com WebGL e físicas proceduralmente geradas.",
+      tags: ["WEBGL", "REACT THREE FIBER", "SHADERS", "BLOCKCHAIN"],
     },
     {
       id: 2,
       label: "PORTFOLIO_CO_02",
       sublabel: "CRYSTAL AUDIO",
       modelPath: "/models/cristal.glb",
-      description: "Experiência sonora tridimensional interativa.",
+      description:
+        "Experiência sonora tridimensional interativa com visualizadores reativos em tempo real e sintetizadores modulares espaciais.",
+      tags: ["AUDIO SYNTH", "THREE.JS", "WEB AUDIO API"],
     },
     {
       id: 3,
       label: "PORTFOLIO_CO_03",
       sublabel: "QUANTUM LABS",
       modelPath: "/models/cristal.glb",
-      description: "Plataforma Web3 com estética minimalista e fosca.",
+      description:
+        "Plataforma Web3 experimental focada em micro-interações responsivas e estéticas translúcidas de gelo e refração de luz.",
+      tags: ["GSAP", "DESIGN SYSTEM", "GLSL SHADERS"],
     },
   ];
 
@@ -90,50 +129,57 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const next = useCallback(() => setIndex((i) => Math.min(items.length - 1, i + 1)), [items.length]);
 
-  // Transição de entrada no cristal (Dolly-Zoom + Frost Dissolve)
+  // Voo Contínuo de Entrada para o Interior do Cristal (Sem Cortes)
   const handleEnterProject = useCallback(() => {
     if (!zoomTriggerRef.current || activeProject) return;
 
+    // Flash sutil de refração da lente no momento exato do voo através da casca
     gsap.timeline()
-      .to(frostRef.current, { opacity: 1, duration: 0.5, delay: 0.6 })
-      .call(() => {
-        setActiveProject(currentItem);
-        if (customOnEnter) customOnEnter(currentItem);
-      })
-      .to(frostRef.current, { opacity: 0, duration: 0.6, delay: 0.2 });
+      .to(lensPassRef.current, { opacity: 0.8, duration: 0.4, delay: 0.7 })
+      .to(lensPassRef.current, { opacity: 0, duration: 0.6 })
+      .call(
+        () => {
+          setActiveProject(currentItem);
+          if (customOnEnter) customOnEnter(currentItem);
+        },
+        null,
+        0.9
+      );
 
     zoomTriggerRef.current.zoomIn();
   }, [currentItem, activeProject, customOnEnter]);
 
-  // Transição de retorno ao carrossel
+  // Retorno da Câmera para Fora do Cristal
   const handleBackToCarousel = useCallback(() => {
     gsap.timeline()
-      .to(frostRef.current, { opacity: 1, duration: 0.4 })
+      .to(lensPassRef.current, { opacity: 0.7, duration: 0.3 })
       .call(() => {
         setActiveProject(null);
-        if (zoomTriggerRef.current) zoomTriggerRef.current.zoomOut();
       })
-      .to(frostRef.current, { opacity: 0, duration: 0.6 });
+      .to(lensPassRef.current, { opacity: 0, duration: 0.5 });
+
+    if (zoomTriggerRef.current) zoomTriggerRef.current.zoomOut();
   }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#8f97a1", overflow: "hidden" }}>
-      {/* Overlay de Névoa / Frost Dissolve para transição de tela */}
+      {/* Brilho / Distorção de Refração de Lente na Passagem */}
       <div
-        ref={frostRef}
+        ref={lensPassRef}
         style={{
           position: "fixed",
           inset: 0,
-          background: "#8f97a1",
+          background: "radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(143,151,161,0.9) 100%)",
           opacity: 0,
           pointerEvents: "none",
           zIndex: 999,
+          backdropFilter: "blur(20px)",
         }}
       />
 
       {/* Canvas 3D */}
       <Canvas
-        camera={{ position: [0, 0, 5], fov: 45 }}
+        camera={{ position: [0, 0, 5], fov: 45, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, dpr: [1, 2] }}
       >
         <Suspense fallback={null}>
@@ -152,7 +198,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
           <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
 
-          {/* Ambiente Iluminado por Painéis de Luz (Lightformers) */}
+          {/* Ambiente de Estúdio (Lightformers) */}
           <Environment resolution={256}>
             <Lightformer form="rect" intensity={3} color="#ffffff" scale={[6, 3, 1]} position={[4, 5, 4]} target={[0, 0, 0]} />
             <Lightformer form="rect" intensity={1} color="#c8d4dc" scale={[5, 4, 1]} position={[-5, -2, -3]} target={[0, 0, 0]} />
@@ -161,10 +207,15 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
           <StudioParticles />
 
+          {/* Quando a câmera entra no cristal, o Ambiente 3D Interno Espelhado ganha vida */}
+          {activeProject && <InsideCrystalEnvironment activeProject={activeProject} />}
+
           <group key={index}>
             <CrystalMesh
               modelPath={currentItem.modelPath || crystalConfig.defaultModel}
               seed={index + 1}
+              label={currentItem.label}
+              sublabel={currentItem.sublabel}
               onHoverChange={setIsHovered}
               onClick={handleEnterProject}
             />
@@ -174,23 +225,13 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             enableZoom={false}
             enablePan={false}
             minPolarAngle={Math.PI / 2}
-            maxPolarAngle={Math.PI / 2}
+ maxPolarAngle={Math.PI / 2}
             rotateSpeed={0.8}
             makeDefault
             enabled={!activeProject}
           />
         </Suspense>
       </Canvas>
-
-      {/* Viewfinder HUD fixo em screen-space (não gira com o cristal) */}
-      {!activeProject && (
-        <ViewfinderFrame
-          label={currentItem.label}
-          sublabel={currentItem.sublabel}
-          onExplore={handleEnterProject}
-          isHovered={isHovered}
-        />
-      )}
 
       {/* Botões de Navegação Glassmorphic do Carrossel */}
       {!activeProject && (
@@ -252,7 +293,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         </>
       )}
 
-      {/* Seção Aberta ao Entrar no Cristal */}
+      {/* Painel Interno do Projeto Integrado ao Espaço 3D (Dark Mode / Glassmorphism) */}
       {activeProject && (
         <div
           style={{
@@ -267,38 +308,85 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             fontFamily: "'Courier New', Courier, monospace",
             textAlign: "center",
             padding: "40px",
-            background: "rgba(143, 151, 161, 0.5)",
-            backdropFilter: "blur(18px)",
+            background: "rgba(15, 23, 32, 0.45)",
+            backdropFilter: "blur(12px)",
+            pointerEvents: "auto",
           }}
         >
-          <h1 style={{ fontSize: "32px", letterSpacing: "3px", marginBottom: "10px" }}>
+          {/* Header & Subtitle */}
+          <div style={{ opacity: 0.6, fontSize: "11px", letterSpacing: "3px", marginBottom: "8px" }}>
+            ////// PROJECT DISCOVERY
+          </div>
+          <h1 style={{ fontSize: "36px", letterSpacing: "4px", marginBottom: "8px", fontWeight: "bold" }}>
             {activeProject.label}
           </h1>
-          <h3 style={{ fontSize: "14px", opacity: 0.8, letterSpacing: "2px", marginBottom: "20px" }}>
+          <h3 style={{ fontSize: "15px", color: "#a5c4e0", letterSpacing: "2.5px", marginBottom: "24px" }}>
             {activeProject.sublabel}
           </h3>
-          <p style={{ maxWidth: "500px", fontSize: "14px", lineHeight: "1.6", opacity: 0.9, marginBottom: "30px" }}>
+
+          {/* Descrição */}
+          <p
+            style={{
+              maxWidth: "560px",
+              fontSize: "14px",
+              lineHeight: "1.7",
+              color: "#d4dfeb",
+              marginBottom: "28px",
+              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+            }}
+          >
             {activeProject.description}
           </p>
+
+          {/* Tags do Projeto */}
+          {activeProject.tags && (
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginBottom: "36px" }}>
+              {activeProject.tags.map((tag, i) => (
+                <span
+                  key={i}
+                  style={{
+                    padding: "5px 14px",
+                    background: "rgba(255, 255, 255, 0.08)",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    borderRadius: "4px",
+                    fontSize: "10px",
+                    letterSpacing: "1px",
+                    color: "#cbdbe8",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Botão de Fechar / Retorno */}
           <button
             onClick={handleBackToCarousel}
             style={{
-              padding: "12px 28px",
-              background: "rgba(255, 255, 255, 0.2)",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
-              borderRadius: "30px",
+              padding: "12px 32px",
+              background: "rgba(255, 255, 255, 0.12)",
+              border: "1px solid rgba(255, 255, 255, 0.35)",
+              borderRadius: "4px",
               color: "#ffffff",
               fontFamily: "'Courier New', Courier, monospace",
               fontSize: "12px",
-              letterSpacing: "1.5px",
+              letterSpacing: "2px",
               cursor: "pointer",
               backdropFilter: "blur(10px)",
               transition: "all 0.3s ease",
+              boxShadow: "0 0 15px rgba(255,255,255,0.1)",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.35)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)")}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
+              e.currentTarget.style.boxShadow = "0 0 25px rgba(255,255,255,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
+              e.currentTarget.style.boxShadow = "0 0 15px rgba(255,255,255,0.1)";
+            }}
           >
-            ← BACK TO CAROUSEL
+            [ CLOSE ]
           </button>
         </div>
       )}

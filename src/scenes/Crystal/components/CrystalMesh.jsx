@@ -6,6 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
+import ObjectAnchoredHUD from "./ObjectAnchoredHUD";
 
 /* ------------------------------------------------------------------ */
 /* 1. Textura de Ruído Suave para Aspecto Fosco (Frosted Surface)     */
@@ -101,6 +102,8 @@ export const FresnelRimShader = {
 export default function CrystalMesh({
   modelPath = defaultConfig.defaultModel,
   seed = 1,
+  label,
+  sublabel,
   config = defaultConfig,
   onHoverChange,
   onClick,
@@ -275,7 +278,18 @@ export default function CrystalMesh({
           <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} />
         </mesh>
 
-        {/* 3. Fresnel / Rim Light */}
+        {/* 3. Gaiola de Constelação Wireframe 3D Orbitante em Volta do Cristal */}
+        {baseGeometry && (
+          <mesh
+            geometry={animatedGeometry || baseGeometry}
+            scale={transformScale * 1.12}
+            rotation={transformRotation}
+          >
+            <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.16} />
+          </mesh>
+        )}
+
+        {/* 4. Fresnel / Rim Light */}
         {baseGeometry && (
           <mesh
             geometry={animatedGeometry || baseGeometry}
@@ -293,6 +307,15 @@ export default function CrystalMesh({
             />
           </mesh>
         )}
+
+        {/* 5. HUD 2D Ancorado aos Pontos da Superfície do Cristal com Linhas Guia */}
+        <ObjectAnchoredHUD
+          crystalMeshRef={mainMeshRef}
+          label={label}
+          sublabel={sublabel}
+          onExplore={onClick}
+          isHovered={isHovering.current}
+        />
       </group>
     </Float>
   );
