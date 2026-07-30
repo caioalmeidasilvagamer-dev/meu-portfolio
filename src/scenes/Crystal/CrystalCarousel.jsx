@@ -207,10 +207,9 @@ function Crystal({ seed = 1, label }) {
 
   const wireframeGeo = useMemo(() => {
     if (!geometry) return null;
-    // 1. Agrupa vértices próximos para criar triângulos/polígonos mais amplos e limpos
-    const merged = mergeVertices(geometry.clone(), 0.08);
-    // 2. Destaca as arestas estruturais principais (eliminando o excesso de micro-triângulos)
-    return new THREE.EdgesGeometry(merged, 15);
+    // EdgesGeometry direto na geometria original (com threshold de 22°)
+    // Mantém 100% da precisão dos relevos e bordas extremas sem distorcer vértices
+    return new THREE.EdgesGeometry(geometry, 22);
   }, [geometry]);
 
   const uniforms = useMemo(
@@ -330,7 +329,7 @@ function Crystal({ seed = 1, label }) {
         {wireframeGeo && (
           <lineSegments
             geometry={wireframeGeo}
-            scale={transformScale}
+            scale={transformScale * 1.002}
             rotation={transformRotation}
           >
             <shaderMaterial
@@ -342,6 +341,9 @@ function Crystal({ seed = 1, label }) {
               blending={THREE.AdditiveBlending}
               depthTest={true}
               depthWrite={false}
+              polygonOffset={true}
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
             />
           </lineSegments>
         )}
