@@ -3,7 +3,7 @@
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { MeshTransmissionMaterial, Float, useGLTF, Html } from "@react-three/drei";
+import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 
@@ -101,8 +101,9 @@ export const FresnelRimShader = {
 export default function CrystalMesh({
   modelPath = defaultConfig.defaultModel,
   seed = 1,
-  label,
   config = defaultConfig,
+  onHoverChange,
+  onClick,
 }) {
   const groupRef = useRef();
   const mainMeshRef = useRef();
@@ -116,7 +117,7 @@ export default function CrystalMesh({
   // Carrega qualquer modelo .glb dinamicamente
   const { nodes } = useGLTF(modelPath);
 
-  // Extrai a geometria base de forma robusta (compatível com qualquer .glb)
+  // Extrai a geometria base de forma robusta
   const baseGeometry = useMemo(() => {
     if (!nodes) return null;
     return (
@@ -126,7 +127,7 @@ export default function CrystalMesh({
     );
   }, [nodes]);
 
-  // Clonar a geometria para deformar vértices em tempo real com a onda do mouse
+  // Clonar a geometria para deformar vértices em tempo real
   const animatedGeometry = useMemo(() => {
     if (!baseGeometry) return null;
     return baseGeometry.clone();
@@ -224,8 +225,6 @@ export default function CrystalMesh({
     }
   });
 
-  const displayLabel = label || `PORTFOLIO_CO_0${seed}`;
-
   return (
     <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
@@ -250,17 +249,27 @@ export default function CrystalMesh({
           geometry={animatedGeometry || baseGeometry}
           scale={transformScale}
           rotation={transformRotation}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onClick) onClick();
+          }}
           onPointerMove={(e) => {
             e.stopPropagation();
             if (mainMeshRef.current && e.point) {
               const local = e.point.clone();
               mainMeshRef.current.worldToLocal(local);
               targetMouseLocal.current.copy(local);
-              isHovering.current = true;
+              if (!isHovering.current) {
+                isHovering.current = true;
+                if (onHoverChange) onHoverChange(true);
+              }
             }
           }}
           onPointerLeave={() => {
-            isHovering.current = false;
+            if (isHovering.current) {
+              isHovering.current = false;
+              if (onHoverChange) onHoverChange(false);
+            }
           }}
         >
           <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} />
@@ -284,74 +293,6 @@ export default function CrystalMesh({
             />
           </mesh>
         )}
-
-        {/* Anotações HUD */}
-        <Html
-          position={[0, 0, 0]}
-          center
-          style={{
-            pointerEvents: "none",
-            width: "440px",
-            height: "320px",
-            userSelect: "none",
-          }}
-        >
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              fontFamily: "'Courier New', Courier, monospace",
-              color: "#ffffff",
-              fontSize: "11px",
-              letterSpacing: "1px",
-              textShadow: "0 0 8px rgba(255,255,255,0.6)",
-            }}
-          >
-            <div style={{ position: "absolute", top: "10px", left: "10px", textAlign: "left" }}>
-              <div style={{ fontWeight: "bold", fontSize: "12px", letterSpacing: "1.5px" }}>
-                {displayLabel}
-              </div>
-              <div style={{ opacity: 0.8, fontSize: "10px", marginTop: "2px" }}>
-                PUDGY PENGUINS
-              </div>
-              <svg
-                width="80"
-                height="40"
-                style={{ position: "absolute", top: "28px", left: "0", overflow: "visible" }}
-              >
-                <polyline
-                  points="0,0 50,0 75,25"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.65)"
-                  strokeWidth="1"
-                />
-              </svg>
-            </div>
-
-            <div style={{ position: "absolute", top: "20px", right: "10px", textAlign: "right" }}>
-              <div style={{ opacity: 0.85 }}>TEMP 35.36</div>
-              <div style={{ opacity: 0.65, fontSize: "10px", marginTop: "2px" }}>+01.87</div>
-            </div>
-
-            <div style={{ position: "absolute", bottom: "15px", right: "10px", textAlign: "right" }}>
-              <div style={{ opacity: 0.75, fontSize: "10px" }}>D 01.02.2020</div>
-              <div
-                style={{
-                  fontWeight: "bold",
-                  fontSize: "11px",
-                  borderBottom: "1px solid rgba(255,255,255,0.85)",
-                  display: "inline-block",
-                  marginTop: "4px",
-                  pointerEvents: "auto",
-                  cursor: "pointer",
-                }}
-              >
-                CLICK TO EXPLORE
-              </div>
-            </div>
-          </div>
-        </Html>
       </group>
     </Float>
   );
