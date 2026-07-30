@@ -6,7 +6,6 @@ import { useFrame } from "@react-three/fiber";
 import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
-import ObjectAnchoredHUD from "./ObjectAnchoredHUD";
 
 /* ------------------------------------------------------------------ */
 /* 1. Textura de Ruído Suave para Aspecto Fosco (Frosted Surface)     */
@@ -299,14 +298,6 @@ export default function CrystalMesh({
           </mesh>
         )}
 
-        {/* 5. HUD 2D Ancorado aos Pontos da Superfície do Cristal com Linhas Guia */}
-        <ObjectAnchoredHUD
-          crystalMeshRef={mainMeshRef}
-          label={label}
-          sublabel={sublabel}
-          onExplore={onClick}
-          isHovered={isHovering.current}
-        />
       </group>
     </Float>
   );
