@@ -1,67 +1,98 @@
 // InsideCrystalEnvironment.jsx
-// Ambiente 3D que envolve a câmera quando ela entra no interior do cristal
+// Domo esférico de cristal facetado — ambiente imersivo visto de dentro do cristal
 
-import React, { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useNoiseTexture } from "./CrystalMesh";
 
 export default function InsideCrystalEnvironment({ activeProject }) {
-  const caveMeshRef = useRef();
-  const crystalReflectionsRef = useRef();
-  const noiseMap = useNoiseTexture();
+  const domeRef    = useRef();
+  const facetsRef  = useRef();
+  const floorRef   = useRef();
+
+  const themeColor = activeProject?.themeColor || "#a6cced";
+
+  // Partículas de "poeira de cristal" geradas uma única vez
+  const dustPositions = useMemo(() => {
+    const arr = new Float32Array(600);
+    for (let i = 0; i < 600; i++) {
+      arr[i] = (Math.random() - 0.5) * 7;
+    }
+    return arr;
+  }, []);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-
-    // Rotação sutil e contínua das facetas de espelho da caverna interna
-    if (caveMeshRef.current) {
-      caveMeshRef.current.rotation.y = t * 0.03;
-      caveMeshRef.current.rotation.z = Math.sin(t * 0.02) * 0.05;
-    }
-
-    if (crystalReflectionsRef.current) {
-      crystalReflectionsRef.current.rotation.y = -t * 0.05;
-    }
+    if (domeRef.current)   domeRef.current.rotation.y   =  t * 0.008;
+    if (facetsRef.current) facetsRef.current.rotation.y = -t * 0.018;
+    if (floorRef.current)  floorRef.current.rotation.z  =  t * 0.005;
   });
 
   return (
-    <group position={[0, 0, 0]}>
-      {/* 1. Caverna de Cristal Facetada Envolvente (Inverted Shell) */}
-      <mesh ref={caveMeshRef}>
-        <icosahedronGeometry args={[5, 2]} />
-        <meshStandardMaterial
-          side={THREE.BackSide}
-          color="#1e2732"
-          roughness={0.2}
-          metalness={0.7}
-          bumpMap={noiseMap}
-          bumpScale={0.06}
-          envMapIntensity={2.0}
-        />
-      </mesh>
-
-      {/* 2. Facetas Internas de Espelho e Distorção de Cristal */}
-      <mesh ref={crystalReflectionsRef}>
-        <octahedronGeometry args={[3.8, 1]} />
+    <group>
+      {/* ── 1. DOMO EXTERNO — esfera grande com normais invertidas, facetas cristalinas ── */}
+      <mesh ref={domeRef} scale={4.5}>
+        <icosahedronGeometry args={[1, 2]} />
         <meshPhysicalMaterial
           side={THREE.BackSide}
-          color="#3a4856"
-          roughness={0.15}
-          metalness={0.9}
-          transmission={0.4}
-          ior={1.4}
-          clearcoat={1.0}
-          clearcoatRoughness={0.1}
+          color="#cdd6df"
+          roughness={0.06}
+          metalness={0.12}
+          transmission={0.55}
+          thickness={2.5}
+          ior={1.6}
+          clearcoat={1}
+          clearcoatRoughness={0.08}
           transparent
-          opacity={0.65}
+          opacity={0.55}
+          envMapIntensity={2.5}
         />
       </mesh>
 
-      {/* 3. Luzes Cáusticas Internas que Projetam Brilhos de Cristal */}
-      <pointLight position={[0, 1.5, 0]} intensity={4} color="#a6cced" distance={8} />
-      <pointLight position={[-2.5, -1, -1]} intensity={2.5} color="#ffffff" distance={7} />
-      <pointLight position={[2.5, 0, 1.5]} intensity={3} color="#6e8fae" distance={7} />
+      {/* ── 2. CAMADA INTERMEDIÁRIA — facetas coloridas com a cor do projeto ── */}
+      <mesh ref={facetsRef} scale={3.2}>
+        <icosahedronGeometry args={[1, 1]} />
+        <meshPhysicalMaterial
+          side={THREE.BackSide}
+          color={themeColor}
+          roughness={0.08}
+          metalness={0.25}
+          transmission={0.45}
+          thickness={1.5}
+          ior={1.75}
+          transparent
+          opacity={0.2}
+          envMapIntensity={1.8}
+        />
+      </mesh>
+
+      {/* ── 3. CHÃO REFLETIVO — disco cristalino no "assoalho" ── */}
+      <mesh ref={floorRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.6, 0]}>
+        <circleGeometry args={[3, 64]} />
+        <meshPhysicalMaterial
+          color={themeColor}
+          roughness={0.15}
+          metalness={0.7}
+          clearcoat={1}
+          clearcoatRoughness={0.05}
+          transparent
+          opacity={0.45}
+        />
+      </mesh>
+
+      {/* ── 4. LUZES CÁUSTICAS INTERNAS ── */}
+      <pointLight position={[0,  2.5,  0  ]} intensity={4.0} color={themeColor} distance={12} />
+      <pointLight position={[-2, -1,  -1.5]} intensity={2.0} color="#ffffff"    distance={8}  />
+      <pointLight position={[ 2,  0,   2  ]} intensity={2.5} color={themeColor} distance={8}  />
+      <pointLight position={[0,  -2,   0  ]} intensity={1.5} color="#a0c8e0"    distance={7}  />
+
+      {/* ── 5. POEIRA DE CRISTAL FLUTUANTE ── */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={200} array={dustPositions} itemSize={3} />
+        </bufferGeometry>
+        <pointsMaterial color="#ffffff" size={0.018} transparent opacity={0.45} sizeAttenuation />
+      </points>
     </group>
   );
 }

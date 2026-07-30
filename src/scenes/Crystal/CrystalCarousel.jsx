@@ -117,15 +117,25 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       description:
         "Coleção exclusiva e ecossistema digital imersivo em blockchain. Uma experiência visual de alto impacto construída com WebGL e físicas proceduralmente geradas.",
       tags: ["WEBGL", "REACT THREE FIBER", "SHADERS", "BLOCKCHAIN"],
+      themeColor: "#7eb8e0",
+      innerModel: null,
+      innerScale: 0.6,
+      images: [],
+      projectUrl: "https://pudgypenguins.com",
     },
     {
       id: 2,
       label: "PORTFOLIO_CO_02",
-      sublabel: "CRYSTAL AUDIO",
+      sublabel: "ENERGIA SOLAR",
       modelPath: "/models/cristal.glb",
       description:
-        "Experiência sonora tridimensional interativa com visualizadores reativos em tempo real e sintetizadores modulares espaciais.",
-      tags: ["AUDIO SYNTH", "THREE.JS", "WEB AUDIO API"],
+        "Site institucional completo para empresa de energia solar fotovoltaica. Sistema de simulação de economia, integração com Google Maps para mapeamento de telhados e painel administrativo em tempo real.",
+      tags: ["REACT", "NODE.JS", "GOOGLE MAPS API", "THREE.JS"],
+      themeColor: "#f59e0b",
+      innerModel: null,       // substitua por "/models/painel_solar.glb" quando tiver o arquivo
+      innerScale: 0.7,
+      images: [],             // substitua por ["/projects/solar1.jpg", "/projects/solar2.jpg"]
+      projectUrl: "https://seu-cliente-solar.com.br",
     },
     {
       id: 3,
@@ -133,8 +143,13 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       sublabel: "QUANTUM LABS",
       modelPath: "/models/cristal.glb",
       description:
-        "Plataforma Web3 experimental focada em micro-interações responsivas e estéticas translúcidas de gelo e refração de luz.",
+        "Plataforma Web3 experimental focada em micro-interações responsivas e estéticas translucidas de gelo e refração de luz.",
       tags: ["GSAP", "DESIGN SYSTEM", "GLSL SHADERS"],
+      themeColor: "#a78bfa",
+      innerModel: null,
+      innerScale: 0.6,
+      images: [],
+      projectUrl: "#",
     },
   ];
 
@@ -228,6 +243,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           <group key={index}>
             <CrystalMesh
               modelPath={currentItem.modelPath || crystalConfig.defaultModel}
+              projectData={currentItem}
               seed={index + 1}
               label={currentItem.label}
               sublabel={currentItem.sublabel}
@@ -308,7 +324,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         </>
       )}
 
-      {/* Painel Interno do Projeto Integrado ao Espaço 3D (Dark Mode / Glassmorphism) */}
+      {/* ── Painel Rico do Projeto (dentro do cristal) ── */}
       {activeProject && (
         <div
           style={{
@@ -322,51 +338,101 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             color: "#ffffff",
             fontFamily: "'Courier New', Courier, monospace",
             textAlign: "center",
-            padding: "40px",
-            background: "rgba(15, 23, 32, 0.45)",
-            backdropFilter: "blur(12px)",
+            padding: "40px 60px",
+            background: "rgba(10, 18, 28, 0.5)",
+            backdropFilter: "blur(14px)",
             pointerEvents: "auto",
+            overflowY: "auto",
           }}
         >
-          {/* Header & Subtitle */}
-          <div style={{ opacity: 0.6, fontSize: "11px", letterSpacing: "3px", marginBottom: "8px" }}>
+          {/* Barra de cor temática no topo */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "3px",
+              background: activeProject.themeColor || "#7eb8e0",
+              boxShadow: `0 0 20px ${activeProject.themeColor || "#7eb8e0"}`,
+            }}
+          />
+
+          {/* Header */}
+          <div style={{ opacity: 0.55, fontSize: "10px", letterSpacing: "4px", marginBottom: "10px" }}>
             ////// PROJECT DISCOVERY
           </div>
-          <h1 style={{ fontSize: "36px", letterSpacing: "4px", marginBottom: "8px", fontWeight: "bold" }}>
+          <h1 style={{ fontSize: "34px", letterSpacing: "4px", marginBottom: "6px", fontWeight: "bold", color: activeProject.themeColor || "#ffffff" }}>
             {activeProject.label}
           </h1>
-          <h3 style={{ fontSize: "15px", color: "#a5c4e0", letterSpacing: "2.5px", marginBottom: "24px" }}>
+          <h3 style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", letterSpacing: "2.5px", marginBottom: "28px" }}>
             {activeProject.sublabel}
           </h3>
+
+          {/* Grid de Fotos do Projeto */}
+          {activeProject.images && activeProject.images.length > 0 && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "12px",
+                maxWidth: "700px",
+                width: "100%",
+                marginBottom: "28px",
+              }}
+            >
+              {activeProject.images.map((img, i) => (
+                <div
+                  key={i}
+                  style={{
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                    border: `1px solid ${activeProject.themeColor || "rgba(255,255,255,0.15)"}`,
+                    boxShadow: `0 4px 20px rgba(0,0,0,0.4), 0 0 10px ${activeProject.themeColor || "transparent"}40`,
+                    transition: "transform 0.25s ease",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                >
+                  <img
+                    src={img}
+                    alt={`${activeProject.sublabel} — screenshot ${i + 1}`}
+                    style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Descrição */}
           <p
             style={{
               maxWidth: "560px",
-              fontSize: "14px",
-              lineHeight: "1.7",
-              color: "#d4dfeb",
-              marginBottom: "28px",
-              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+              fontSize: "13.5px",
+              lineHeight: "1.75",
+              color: "#cddae8",
+              marginBottom: "24px",
+              textShadow: "0 2px 12px rgba(0,0,0,0.6)",
             }}
           >
             {activeProject.description}
           </p>
 
-          {/* Tags do Projeto */}
+          {/* Tags */}
           {activeProject.tags && (
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginBottom: "36px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", marginBottom: "36px" }}>
               {activeProject.tags.map((tag, i) => (
                 <span
                   key={i}
                   style={{
-                    padding: "5px 14px",
-                    background: "rgba(255, 255, 255, 0.08)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    padding: "4px 13px",
+                    background: `${activeProject.themeColor || "#7eb8e0"}18`,
+                    border: `1px solid ${activeProject.themeColor || "rgba(255,255,255,0.2)"}60`,
                     borderRadius: "4px",
                     fontSize: "10px",
-                    letterSpacing: "1px",
-                    color: "#cbdbe8",
+                    letterSpacing: "1.2px",
+                    color: activeProject.themeColor || "#cbdbe8",
                   }}
                 >
                   {tag}
@@ -375,34 +441,71 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             </div>
           )}
 
-          {/* Botão de Fechar / Retorno */}
-          <button
-            onClick={handleBackToCarousel}
-            style={{
-              padding: "12px 32px",
-              background: "rgba(255, 255, 255, 0.12)",
-              border: "1px solid rgba(255, 255, 255, 0.35)",
-              borderRadius: "4px",
-              color: "#ffffff",
-              fontFamily: "'Courier New', Courier, monospace",
-              fontSize: "12px",
-              letterSpacing: "2px",
-              cursor: "pointer",
-              backdropFilter: "blur(10px)",
-              transition: "all 0.3s ease",
-              boxShadow: "0 0 15px rgba(255,255,255,0.1)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
-              e.currentTarget.style.boxShadow = "0 0 25px rgba(255,255,255,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.12)";
-              e.currentTarget.style.boxShadow = "0 0 15px rgba(255,255,255,0.1)";
-            }}
-          >
-            [ CLOSE ]
-          </button>
+          {/* Botões de Ação */}
+          <div style={{ display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+            {/* Link para o projeto */}
+            {activeProject.projectUrl && activeProject.projectUrl !== "#" && (
+              <a
+                href={activeProject.projectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: "12px 32px",
+                  background: `${activeProject.themeColor || "#7eb8e0"}22`,
+                  border: `1px solid ${activeProject.themeColor || "rgba(255,255,255,0.35)"}`,
+                  borderRadius: "4px",
+                  color: activeProject.themeColor || "#ffffff",
+                  fontFamily: "'Courier New', Courier, monospace",
+                  fontSize: "11px",
+                  letterSpacing: "2px",
+                  cursor: "pointer",
+                  backdropFilter: "blur(8px)",
+                  transition: "all 0.25s ease",
+                  boxShadow: `0 0 18px ${activeProject.themeColor || "rgba(255,255,255,0.1)"}44`,
+                  textDecoration: "none",
+                  display: "inline-block",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = `${activeProject.themeColor || "#7eb8e0"}44`;
+                  e.currentTarget.style.boxShadow = `0 0 28px ${activeProject.themeColor || "rgba(255,255,255,0.3)"}88`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = `${activeProject.themeColor || "#7eb8e0"}22`;
+                  e.currentTarget.style.boxShadow = `0 0 18px ${activeProject.themeColor || "rgba(255,255,255,0.1)"}44`;
+                }}
+              >
+                [ VISIT PROJECT ↗ ]
+              </a>
+            )}
+
+            {/* Botão fechar */}
+            <button
+              onClick={handleBackToCarousel}
+              style={{
+                padding: "12px 32px",
+                background: "rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                borderRadius: "4px",
+                color: "rgba(255,255,255,0.8)",
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: "11px",
+                letterSpacing: "2px",
+                cursor: "pointer",
+                backdropFilter: "blur(8px)",
+                transition: "all 0.25s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.18)";
+                e.currentTarget.style.boxShadow = "0 0 20px rgba(255,255,255,0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              [ CLOSE ]
+            </button>
+          </div>
         </div>
       )}
     </div>

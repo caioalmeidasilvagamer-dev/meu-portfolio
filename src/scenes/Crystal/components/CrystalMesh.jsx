@@ -6,6 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import { MeshTransmissionMaterial, Float, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
+import ProjectContent from "./ProjectContent";
 
 /* ------------------------------------------------------------------ */
 /* 1. Textura de Ruído Suave para Aspecto Fosco (Frosted Surface)     */
@@ -101,6 +102,7 @@ export const FresnelRimShader = {
 export default function CrystalMesh({
   modelPath = defaultConfig.defaultModel,
   imagePath = defaultConfig.defaultImage,
+  projectData = null,
   seed = 1,
   label,
   sublabel,
@@ -234,33 +236,26 @@ export default function CrystalMesh({
   return (
     <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
-        {/* 1. Conteúdo Interno Congelado (Imagem Aprisionada + Brilho Soft) */}
+        {/* 1. Conteúdo Interno do Cristal — Objeto do Projeto Aprisionado */}
         {baseGeometry && (
           <group
             ref={innerGroupRef}
-            scale={transformScale * innerCfg.scaleFactor * 1.8}
+            scale={transformScale * innerCfg.scaleFactor}
             rotation={transformRotation}
             renderOrder={-1}
           >
-            {/* Imagem do Personagem Aprisionado no Gelo */}
-            {innerTexture && (
-              <mesh renderOrder={-1} position={[0, 0, 0]}>
-                <planeGeometry args={[1.3, 1.3]} />
-                <meshBasicMaterial
-                  map={innerTexture}
-                  transparent={true}
-                  opacity={0.9}
-                  depthWrite={true}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-            )}
+            {/* ProjectContent usa GLB do projeto, textura flat ou fallback geométrico */}
+            <ProjectContent
+              innerModel={projectData?.innerModel || null}
+              innerScale={projectData?.innerScale || 0.55}
+              themeColor={projectData?.themeColor || "#a6cced"}
+              innerTexture={innerTexture}
+            />
 
-            {/* Mesh de brilho suave de fundo */}
-            <mesh geometry={innerGeometry} renderOrder={-1} scale={0.7}>
+            {/* Glow blob de fundo suave */}
+            <mesh geometry={innerGeometry} renderOrder={-1} scale={0.6}>
               <meshStandardMaterial {...innerCfg.material} />
             </mesh>
-            <pointLight position={[0, 0, 0]} {...innerCfg.pointLight} />
           </group>
         )}
 
