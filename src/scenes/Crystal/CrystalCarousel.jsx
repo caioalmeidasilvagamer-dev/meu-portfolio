@@ -4,7 +4,7 @@
 
 import { Suspense, useState, useCallback, useRef } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useTexture } from "@react-three/drei";
 import gsap from "gsap";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
@@ -410,3 +410,4 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 }
 
 useGLTF.preload(crystalConfig.defaultModel);
+useTexture.preload(crystalConfig.defaultImage);

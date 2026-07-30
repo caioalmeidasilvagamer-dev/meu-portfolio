@@ -3,7 +3,7 @@
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
+import { MeshTransmissionMaterial, Float, useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 
@@ -100,6 +100,7 @@ export const FresnelRimShader = {
 /* ------------------------------------------------------------------ */
 export default function CrystalMesh({
   modelPath = defaultConfig.defaultModel,
+  imagePath = defaultConfig.defaultImage,
   seed = 1,
   label,
   sublabel,
@@ -115,6 +116,9 @@ export default function CrystalMesh({
   const currentMouseLocal = useRef(new THREE.Vector3());
   const isHovering = useRef(false);
   const currentActive = useRef(0.0);
+
+  // Carrega a imagem aprisionada e o modelo 3D
+  const innerTexture = useTexture(imagePath);
 
   // Carrega qualquer modelo .glb dinamicamente
   const { nodes } = useGLTF(modelPath);
@@ -230,15 +234,30 @@ export default function CrystalMesh({
   return (
     <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
-        {/* 1. Conteúdo Interno Congelado (Inner Blob) */}
+        {/* 1. Conteúdo Interno Congelado (Imagem Aprisionada + Brilho Soft) */}
         {baseGeometry && (
           <group
             ref={innerGroupRef}
-            scale={transformScale * innerCfg.scaleFactor}
+            scale={transformScale * innerCfg.scaleFactor * 1.8}
             rotation={transformRotation}
             renderOrder={-1}
           >
-            <mesh geometry={innerGeometry} renderOrder={-1}>
+            {/* Imagem do Personagem Aprisionado no Gelo */}
+            {innerTexture && (
+              <mesh renderOrder={-1} position={[0, 0, 0]}>
+                <planeGeometry args={[1.3, 1.3]} />
+                <meshBasicMaterial
+                  map={innerTexture}
+                  transparent={true}
+                  opacity={0.9}
+                  depthWrite={true}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+            )}
+
+            {/* Mesh de brilho suave de fundo */}
+            <mesh geometry={innerGeometry} renderOrder={-1} scale={0.7}>
               <meshStandardMaterial {...innerCfg.material} />
             </mesh>
             <pointLight position={[0, 0, 0]} {...innerCfg.pointLight} />
