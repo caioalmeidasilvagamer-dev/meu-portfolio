@@ -3,7 +3,7 @@
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { MeshTransmissionMaterial, Float, useGLTF, useTexture } from "@react-three/drei";
+import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 import ProjectContent from "./ProjectContent";
@@ -101,7 +101,6 @@ export const FresnelRimShader = {
 /* ------------------------------------------------------------------ */
 export default function CrystalMesh({
   modelPath = defaultConfig.defaultModel,
-  imagePath = defaultConfig.defaultImage,
   projectData = null,
   seed = 1,
   label,
@@ -119,11 +118,9 @@ export default function CrystalMesh({
   const isHovering = useRef(false);
   const currentActive = useRef(0.0);
 
-  // Carrega a imagem aprisionada e o modelo 3D
-  const innerTexture = useTexture(imagePath);
-
   // Carrega qualquer modelo .glb dinamicamente
   const { nodes } = useGLTF(modelPath);
+
 
   // Extrai a geometria base de forma robusta
   const baseGeometry = useMemo(() => {
@@ -244,12 +241,11 @@ export default function CrystalMesh({
             rotation={transformRotation}
             renderOrder={-1}
           >
-            {/* ProjectContent usa GLB do projeto, textura flat ou fallback geométrico */}
+            {/* ProjectContent usa GLB do projeto ou fallback geométrico */}
             <ProjectContent
               innerModel={projectData?.innerModel || null}
               innerScale={projectData?.innerScale || 0.55}
               themeColor={projectData?.themeColor || "#a6cced"}
-              innerTexture={innerTexture}
             />
 
             {/* Glow blob de fundo suave */}

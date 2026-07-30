@@ -8,9 +8,8 @@ import * as THREE from "three";
  * iluminação e interação com o mouse.
  */
 export const crystalConfig = {
-  // Modelo padrão e imagem aprisionada interna (em /public/models/ e /public/textures/)
+  // Modelo padrão (em /public/models/)
   defaultModel: "/models/cristal.glb",
-  defaultImage: "/textures/inner_character.png",
 
   // Configuração do Material de Transmissão do Cristal (MeshTransmissionMaterial)
   material: {

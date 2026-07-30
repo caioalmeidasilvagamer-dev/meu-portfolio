@@ -36,7 +36,6 @@ export default function ProjectContent({
   innerModel = null,
   innerScale = 0.8,
   themeColor = "#a6cced",
-  innerTexture = null,
 }) {
   const groupRef = useRef();
 
@@ -59,24 +58,13 @@ export default function ProjectContent({
         <meshBasicMaterial color={themeColor} transparent opacity={0.18} side={THREE.DoubleSide} />
       </mesh>
 
-      {/* ── Conteúdo: GLB, textura flat ou fallback geométrico ── */}
+      {/* ── Conteúdo: GLB ou fallback geométrico temático ── */}
       {innerModel ? (
         <Suspense fallback={<FallbackShape themeColor={themeColor} />}>
           <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
             <GLBModel src={innerModel} scale={innerScale} />
           </Float>
         </Suspense>
-      ) : innerTexture ? (
-        <mesh renderOrder={-1}>
-          <planeGeometry args={[1.3, 1.3]} />
-          <meshBasicMaterial
-            map={innerTexture}
-            transparent
-            opacity={0.92}
-            depthWrite={true}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
       ) : (
         <FallbackShape themeColor={themeColor} />
       )}
