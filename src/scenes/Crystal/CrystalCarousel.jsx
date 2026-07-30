@@ -267,16 +267,16 @@ function Crystal({ seed = 1, label }) {
       <group ref={groupRef}>
         {/* 1. Brilho interno suave — luz que irradia de dentro do gelo */}
         {baseGeometry && (
-          <group ref={innerGroupRef} scale={transformScale * 0.12} rotation={transformRotation}>
+          <group ref={innerGroupRef} scale={transformScale * 0.22} rotation={transformRotation}>
             <mesh geometry={innerGeometry}>
               <meshStandardMaterial
-                color="#e8edf0"
+                color="#e2e8ec"
                 roughness={0.9}
                 metalness={0.0}
                 emissive="#dde8ef"
-                emissiveIntensity={0.4}
+                emissiveIntensity={0.7}
                 transparent
-                opacity={0.6}
+                opacity={0.85}
               />
             </mesh>
             <pointLight position={[0, 0, 0]} intensity={4} distance={3.5} color="#ffffff" />
@@ -304,8 +304,8 @@ function Crystal({ seed = 1, label }) {
         >
           <MeshTransmissionMaterial
             transmission={0.98}
-            roughness={0.35}
-            thickness={1.6}
+            roughness={0.3}
+            thickness={1.0}
             ior={1.31}
             chromaticAberration={0.015}
             anisotropy={0.2}
@@ -313,12 +313,12 @@ function Crystal({ seed = 1, label }) {
             distortionScale={0.12}
             temporalDistortion={0.02}
             normalMap={noiseMap}
-            normalScale={new THREE.Vector2(0.05, 0.05)}
+            normalScale={new THREE.Vector2(0.005, 0.005)}
             clearcoat={0.2}
             clearcoatRoughness={0.35}
-            attenuationColor="#9aa3ab"
-            attenuationDistance={2.0}
-            color="#e6e8ea"
+            attenuationColor="#b4bcc4"
+            attenuationDistance={2.9}
+            color="#e4e8eb"
             resolution={512}
             samples={6}
             backside
@@ -603,11 +603,13 @@ export default function CrystalCarousel({ items }) {
           {/* Névoa recuada para não escurecer ou poluir o cristal e os wireframes */}
           <fog attach="fog" args={["#8f97a1", 10, 25]} />
 
-          {/* Luz de Ambiente */}
-          <ambientLight intensity={0.5} />
+          {/* Luz de Ambiente — mantida suave para não criar sparkle extra */}
+          <ambientLight intensity={0.35} />
 
-          {/* Holofote Superior-Esquerdo (Key highlight das facetas de gelo) */}
-          <spotLight
+          {/* spotLight e directionalLight comentados: múltiplas fontes pontuais
+              criam reflexos em grid no normal map (efeito "purpurina").
+              Os Lightformers no Environment são suficientes para iluminar. */}
+          {/* <spotLight
             position={[-3, 6, 3]}
             angle={Math.PI / 4}
             penumbra={0.6}
@@ -615,8 +617,8 @@ export default function CrystalCarousel({ items }) {
             distance={14}
             color="#ffffff"
             castShadow={false}
-          />
-          <directionalLight position={[4, 7, 2]} intensity={1.1} color="#f8fafc" />
+          /> */}
+          {/* <directionalLight position={[4, 7, 2]} intensity={1.1} color="#f8fafc" /> */}
 
           {/* Luzes de preenchimento e profundidade */}
           <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
