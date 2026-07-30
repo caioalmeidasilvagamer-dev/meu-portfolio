@@ -153,7 +153,7 @@ export default function CrystalMesh({
     };
     return {
       transformRotation: [rand(1) * 0.2, rand(2) * Math.PI, rand(3) * 0.2],
-      transformScale: 1.4 + rand(4) * 0.12,
+      transformScale: 2.0 + rand(4) * 0.12,
     };
   }, [seed]);
 
@@ -278,16 +278,7 @@ export default function CrystalMesh({
           <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} />
         </mesh>
 
-        {/* 3. Gaiola de Constelação Wireframe 3D Orbitante em Volta do Cristal */}
-        {baseGeometry && (
-          <mesh
-            geometry={animatedGeometry || baseGeometry}
-            scale={transformScale * 1.12}
-            rotation={transformRotation}
-          >
-            <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.16} />
-          </mesh>
-        )}
+        {/* Wireframe removido */}
 
         {/* 4. Fresnel / Rim Light */}
         {baseGeometry && (

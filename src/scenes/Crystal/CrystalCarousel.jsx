@@ -16,8 +16,20 @@ import { crystalConfig } from "./config/crystalConfig";
 function CameraController({ zoomTriggerRef }) {
   const { camera } = useThree();
 
+  // Guarda o estado original da câmera para restaurar exatamente ao sair
+  const snapshot = useRef(null);
+
   zoomTriggerRef.current = {
     zoomIn: (onComplete) => {
+      // Captura o estado exato antes de entrar
+      snapshot.current = {
+        x: camera.position.x,
+        y: camera.position.y,
+        z: camera.position.z,
+        fov: camera.fov,
+        near: camera.near,
+      };
+
       gsap.timeline()
         .to(camera.position, {
           x: 0,
@@ -42,19 +54,22 @@ function CameraController({ zoomTriggerRef }) {
         });
     },
     zoomOut: (onComplete) => {
+      // Restaura exatamente o estado original capturado antes de entrar
+      const s = snapshot.current || { x: 0, y: 0, z: 5, fov: 45, near: 0.1 };
+
       gsap.timeline()
         .to(camera.position, {
-          x: 0,
-          y: 0,
-          z: 5.0,
+          x: s.x,
+          y: s.y,
+          z: s.z,
           duration: 1.4,
           ease: "power2.inOut",
         })
         .to(
           camera,
           {
-            near: 0.1,
-            fov: 45,
+            near: s.near,
+            fov: s.fov,
             duration: 1.4,
             ease: "power2.inOut",
             onUpdate: () => camera.updateProjectionMatrix(),
