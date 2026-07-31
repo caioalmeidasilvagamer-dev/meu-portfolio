@@ -170,6 +170,15 @@ export default function CrystalMesh({
 
   const wasDeformedRef = useRef(false);
 
+  // Centralizar cristal: calcula offset Y do centro da bounding box
+  const centerY = useMemo(() => {
+    if (!baseGeometry) return 0;
+    baseGeometry.computeBoundingBox();
+    const center = new THREE.Vector3();
+    baseGeometry.boundingBox.getCenter(center);
+    return -center.y;
+  }, [baseGeometry]);
+
   // eslint-disable-next-line react-hooks/immutability -- Three.js geometry buffer mutation is intentional & performant
   useFrame((state) => {
     if (groupRef.current) groupRef.current.rotation.y += 0.003;
@@ -236,7 +245,8 @@ export default function CrystalMesh({
   });
 
   return (
-    <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
+    <group position={[0, centerY, 0]}>
+      <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
         {/* 1. Conteúdo Interno do Cristal — Objeto do Projeto Aprisionado */}
         {baseGeometry && (
@@ -309,5 +319,6 @@ export default function CrystalMesh({
 
       </group>
     </Float>
+    </group>
   );
 }

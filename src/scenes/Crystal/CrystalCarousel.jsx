@@ -7,7 +7,9 @@ import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useProgress
 import gsap from "gsap";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
+import LavaBackground from "./components/LavaBackground";
 import { crystalConfig } from "./config/crystalConfig";
+import useViewport from "../../hooks/useViewport";
 
 /* ------------------------------------------------------------------ */
 /* Loader HUD — mantém visível até download + compilação de shaders    */
@@ -222,6 +224,8 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const lensPassRef = useRef(null);
   const cameraRef = useRef(null);
 
+  const { isMobile, mobileScale } = useViewport();
+
   const items = customItems || defaultItems;
   const currentItem = items[index];
 
@@ -335,6 +339,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#8f97a1", overflow: "hidden" }}>
+      {/* Fundo dinâmico estilo abajur de lava */}
+      <LavaBackground />
+
       {/* Overlay de Passagem de Refração de Lente (Transição Fluida) */}
       <div
         ref={lensPassRef}
@@ -359,7 +366,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           Se o portfólio crescer para múltiplas rotas, considerar React.lazy() + Suspense. */}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45, near: 0.1, far: 100 }}
-        gl={{ antialias: true, alpha: false, dpr: [1, 2] }}
+        gl={{ antialias: true, alpha: true, dpr: [1, 2] }}
         onCreated={({ camera }) => {
           cameraRef.current = camera;
         }}
@@ -370,7 +377,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           isTransitioning={isTransitioning}
           controlsRef={controlsRef}
         />
-        <color attach="background" args={[crystalConfig.environment.backgroundColor]} />
         <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
         <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
         <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
@@ -411,7 +417,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           </group>
 
           {/* Modelo 3D do cristal — mantido montado no Canvas para manter os shaders quentes no WebGL */}
-          <group key={index} visible={!activeProject}>
+          <group key={index} visible={!activeProject} scale={[mobileScale, mobileScale, mobileScale]}>
             <CrystalMesh
               modelPath={currentItem.modelPath || crystalConfig.defaultModel}
               projectData={currentItem}
@@ -435,17 +441,17 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             disabled={index === 0}
             style={{
               position: "absolute",
-              left: 30,
+              left: isMobile ? 12 : 30,
               top: "50%",
               transform: "translateY(-50%)",
-              width: 50,
-              height: 50,
+              width: isMobile ? 44 : 50,
+              height: isMobile ? 44 : 50,
               borderRadius: "50%",
               background: "rgba(255, 255, 255, 0.15)",
               backdropFilter: "blur(12px)",
               border: "1px solid rgba(255, 255, 255, 0.25)",
               color: index === 0 ? "rgba(255, 255, 255, 0.3)" : "#ffffff",
-              fontSize: 22,
+              fontSize: isMobile ? 18 : 22,
               cursor: index === 0 ? "default" : "pointer",
               display: "flex",
               alignItems: "center",
@@ -462,17 +468,17 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             disabled={index === items.length - 1}
             style={{
               position: "absolute",
-              right: 30,
+              right: isMobile ? 12 : 30,
               top: "50%",
               transform: "translateY(-50%)",
-              width: 50,
-              height: 50,
+              width: isMobile ? 44 : 50,
+              height: isMobile ? 44 : 50,
               borderRadius: "50%",
               background: "rgba(255, 255, 255, 0.15)",
               backdropFilter: "blur(12px)",
               border: "1px solid rgba(255, 255, 255, 0.25)",
               color: index === items.length - 1 ? "rgba(255, 255, 255, 0.3)" : "#ffffff",
-              fontSize: 22,
+              fontSize: isMobile ? 18 : 22,
               cursor: index === items.length - 1 ? "default" : "pointer",
               display: "flex",
               alignItems: "center",
@@ -492,18 +498,18 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         <div
           style={{
             position: "absolute",
-            bottom: 40,
-            left: 40,
+            bottom: isMobile ? 16 : 40,
+            left: isMobile ? 16 : 40,
             zIndex: 100,
-            maxWidth: 380,
-            width: "calc(100% - 80px)",
+            maxWidth: isMobile ? "calc(100% - 32px)" : 380,
+            width: isMobile ? "calc(100% - 32px)" : "calc(100% - 80px)",
             color: "#ffffff",
             fontFamily: "'Courier New', Courier, monospace",
             background: "rgba(8, 14, 22, 0.65)",
             backdropFilter: "blur(18px)",
             border: `1px solid ${activeProject.themeColor || "#7eb8e0"}55`,
             borderRadius: "10px",
-            padding: "24px 28px",
+            padding: isMobile ? "16px 18px" : "24px 28px",
             pointerEvents: "auto",
             boxShadow: `0 8px 40px rgba(0,0,0,0.5), 0 0 24px ${activeProject.themeColor || "#7eb8e0"}30`,
             overflowY: "auto",
@@ -523,12 +529,12 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           />
 
           {/* Label */}
-          <div style={{ fontSize: "9px", letterSpacing: "3.5px", opacity: 0.5, marginBottom: "6px" }}>
+          <div style={{ fontSize: isMobile ? "8px" : "9px", letterSpacing: "3.5px", opacity: 0.5, marginBottom: "6px" }}>
             ////// PROJECT DISCOVERY
           </div>
           <div
             style={{
-              fontSize: "22px",
+              fontSize: isMobile ? "17px" : "22px",
               fontWeight: "bold",
               letterSpacing: "2.5px",
               color: activeProject.themeColor || "#ffffff",
@@ -537,18 +543,18 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           >
             {activeProject.sublabel}
           </div>
-          <div style={{ fontSize: "10px", letterSpacing: "2px", opacity: 0.45, marginBottom: "16px" }}>
+          <div style={{ fontSize: isMobile ? "9px" : "10px", letterSpacing: "2px", opacity: 0.45, marginBottom: isMobile ? "10px" : "16px" }}>
             {activeProject.label}
           </div>
 
           {/* Descrição */}
-          <p style={{ fontSize: "12.5px", lineHeight: 1.75, color: "#c8d8e5", marginBottom: "18px" }}>
+          <p style={{ fontSize: isMobile ? "11px" : "12.5px", lineHeight: 1.75, color: "#c8d8e5", marginBottom: isMobile ? "12px" : "18px" }}>
             {activeProject.description}
           </p>
 
           {/* Tags */}
           {activeProject.tags && (
-            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "22px" }}>
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: isMobile ? "14px" : "22px" }}>
               {activeProject.tags.map((tag, i) => (
                 <span
                   key={i}
@@ -557,7 +563,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
                     background: `${activeProject.themeColor || "#7eb8e0"}18`,
                     border: `1px solid ${activeProject.themeColor || "#7eb8e0"}50`,
                     borderRadius: "3px",
-                    fontSize: "9px",
+                    fontSize: isMobile ? "8px" : "9px",
                     letterSpacing: "1px",
                     color: activeProject.themeColor || "#c0d6e8",
                   }}
@@ -569,12 +575,12 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           )}
 
           {/* Dica de orbit */}
-          <div style={{ fontSize: "9px", letterSpacing: "1.5px", opacity: 0.35, marginBottom: "18px", textAlign: "center" }}>
+          <div style={{ fontSize: isMobile ? "8px" : "9px", letterSpacing: "1.5px", opacity: 0.35, marginBottom: isMobile ? "12px" : "18px", textAlign: "center" }}>
             ↺ DRAG TO EXPLORE THE CRYSTAL
           </div>
 
           {/* Ações */}
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: isMobile ? "8px" : "10px", flexWrap: "wrap" }}>
             {activeProject.projectUrl && activeProject.projectUrl !== "#" && (
               <a
                 href={activeProject.projectUrl}
@@ -582,13 +588,13 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
                 rel="noopener noreferrer"
                 style={{
                   flex: 1,
-                  padding: "10px 0",
+                  padding: isMobile ? "8px 0" : "10px 0",
                   textAlign: "center",
                   background: `${activeProject.themeColor || "#7eb8e0"}22`,
                   border: `1px solid ${activeProject.themeColor || "#7eb8e0"}`,
                   borderRadius: "4px",
                   color: activeProject.themeColor || "#ffffff",
-                  fontSize: "10px",
+                  fontSize: isMobile ? "9px" : "10px",
                   letterSpacing: "1.8px",
                   cursor: "pointer",
                   textDecoration: "none",
@@ -604,12 +610,12 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               onClick={handleBackToCarousel}
               style={{
                 flex: 1,
-                padding: "10px 0",
+                padding: isMobile ? "8px 0" : "10px 0",
                 background: "rgba(255,255,255,0.06)",
                 border: "1px solid rgba(255,255,255,0.22)",
                 borderRadius: "4px",
                 color: "rgba(255,255,255,0.7)",
-                fontSize: "10px",
+                fontSize: isMobile ? "9px" : "10px",
                 letterSpacing: "1.8px",
                 cursor: "pointer",
                 fontFamily: "'Courier New', Courier, monospace",
