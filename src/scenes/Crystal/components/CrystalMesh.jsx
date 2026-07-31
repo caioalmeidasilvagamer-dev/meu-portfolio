@@ -12,7 +12,7 @@ import ProjectContent from "./ProjectContent";
 /* 1. Textura de Ruído Suave para Aspecto Fosco (Frosted Surface)     */
 /* ------------------------------------------------------------------ */
 let GLOBAL_NOISE_TEX = null;
-export function useNoiseTexture() {
+function useNoiseTexture() {
   return useMemo(() => {
     if (GLOBAL_NOISE_TEX) return GLOBAL_NOISE_TEX;
     const size = 256;
@@ -44,7 +44,7 @@ export function useNoiseTexture() {
 }
 
 let GLOBAL_INNER_BLOB_GEO = null;
-export function useInnerBlobGeometry(radius = 1) {
+function useInnerBlobGeometry(radius = 1) {
   return useMemo(() => {
     if (GLOBAL_INNER_BLOB_GEO) return GLOBAL_INNER_BLOB_GEO;
     const geo = new THREE.SphereGeometry(radius, 32, 32);
@@ -65,7 +65,7 @@ export function useInnerBlobGeometry(radius = 1) {
 /* ------------------------------------------------------------------ */
 /* 3. Shader de Fresnel / Rim Light para Bordas Reluzentes            */
 /* ------------------------------------------------------------------ */
-export const FresnelRimShader = {
+const FresnelRimShader = {
   uniforms: {
     uColor: { value: new THREE.Color("#ffffff") },
     uPower: { value: 2.5 },
