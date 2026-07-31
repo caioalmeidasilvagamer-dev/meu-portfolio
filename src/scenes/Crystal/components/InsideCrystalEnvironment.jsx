@@ -1,15 +1,15 @@
 // InsideCrystalEnvironment.jsx
-// Textura HDRI de Esfera 360° de Vidro Fosco Prateado / Frosted Glass Ambient
-// Recria exatamente a estética de vidro jateado fosco prateado com iluminação difusa suave
+// Textura HDRI de Esfera 360° de Cristal de Rocha / Slate Metálico Escuro (Dark Frosted Crystal Ambient)
+// Recria exatamente a estética escura de cristal de rocha azul-cinza metálico com reflexos difusos
 
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 /* ─────────────────────────────────────────────────────────────────
-   Gerador de Textura de Vidro Fosco Prateado (Sandblasted Frosted Glass)
+   Gerador de Textura de Cristal Metálico Escuro (Dark Slate Frosted Crystal)
 ───────────────────────────────────────────────────────────────── */
-function useFrostedGlassSkyTexture(activeProject) {
+function useDarkCrystalSkyTexture(activeProject) {
   const seed = activeProject?.id ?? 1;
 
   return useMemo(() => {
@@ -27,33 +27,33 @@ function useFrostedGlassSkyTexture(activeProject) {
       return x - Math.floor(x);
     };
 
-    // ─── 1. Fundo Gradiente Prateado / Cinza-Gelo Fosco ───
+    // ─── 1. Fundo Gradiente Slate Escuro (Azul-Cinza Metálico Profundo) ───
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0.0, "#dce5ed"); // Prata gelo claro topo-esquerdo
-    bgGrad.addColorStop(0.35, "#eef4fa"); // Prata branco luminoso centro-esquerda
-    bgGrad.addColorStop(0.65, "#d5e0ea"); // Cinza-prata fosco centro-direita
-    bgGrad.addColorStop(1.0, "#b8c6d4"); // Slate prata nas bordas
+    bgGrad.addColorStop(0.0, "#2c3e52"); // Slate azul metálico no topo-esquerdo
+    bgGrad.addColorStop(0.35, "#1e2c3c"); // Tom médio cristalino escuro
+    bgGrad.addColorStop(0.70, "#15202c"); // Azul obsidiana escuro
+    bgGrad.addColorStop(1.0, "#0b121a");  // Base quase preta slate
 
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // ─── 2. Nuvens de Iluminação Difusa Suave (Softbox Glow Pass) ───
-    for (let i = 0; i < 18; i++) {
+    // ─── 2. Nuvens de Reflexo Metálico / Specular Highlights Escuros ───
+    for (let i = 0; i < 22; i++) {
       const cx = rng(i * 37 + 5) * W;
       const cy = rng(i * 41 + 10) * H;
-      const r = 180 + rng(i * 43) * 450;
-      const alpha = 0.15 + rng(i * 47) * 0.35;
+      const r = 120 + rng(i * 43) * 380;
+      const alpha = 0.08 + rng(i * 47) * 0.22;
 
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, `rgba(255, 255, 255, ${alpha.toFixed(2)})`);
-      g.addColorStop(0.5, `rgba(240, 246, 252, ${(alpha * 0.5).toFixed(2)})`);
-      g.addColorStop(1, "rgba(255, 255, 255, 0)");
+      g.addColorStop(0, `rgba(165, 195, 220, ${alpha.toFixed(2)})`);
+      g.addColorStop(0.4, `rgba(80, 115, 145, ${(alpha * 0.5).toFixed(2)})`);
+      g.addColorStop(1, "rgba(0, 0, 0, 0)");
 
       ctx.fillStyle = g;
       ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
     }
 
-    // ─── 3. Micro-Grânulos de Vidro Jateado (Sandblasted Frosted Grain) ───
+    // ─── 3. Micro-Grânulos de Rocha/Gelo Escuro (Dark Frosted Grain) ───
     const imgData = ctx.getImageData(0, 0, W, H);
     const data = imgData.data;
 
@@ -61,27 +61,27 @@ function useFrostedGlassSkyTexture(activeProject) {
       for (let x = 0; x < W; x++) {
         const idx = (y * W + x) * 4;
 
-        // Ruído de alta frequência determinístico tipo vidro jateado
+        // Ruído sutil determinístico de granulação fosca sobre a pedra metálica escura
         const n1 = rng(x * 12.9898 + y * 78.233);
         const n2 = rng(x * 39.421 + y * 11.149);
-        const grain = (n1 - 0.5) * 24 + (n2 - 0.5) * 12;
+        const grain = (n1 - 0.5) * 18 + (n2 - 0.5) * 9;
 
-        data[idx]     = Math.min(255, Math.max(0, data[idx] + grain));
-        data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + grain));
-        data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + grain + 2)); // sutil toque frio
+        data[idx]     = Math.min(255, Math.max(0, data[idx] + grain * 0.8));
+        data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + grain * 0.9));
+        data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + grain * 1.1)); // tom azul metálico
       }
     }
 
     ctx.putImageData(imgData, 0, 0);
 
-    // ─── 4. Passagem de Desfoque Fino (Soft Frosted Diffusion) ───
+    // ─── 4. Passagem de Desfoque Fino (Soft Dark Diffusion) ───
     const blurCanvas = document.createElement("canvas");
     blurCanvas.width = W;
     blurCanvas.height = H;
     const bCtx = blurCanvas.getContext("2d");
 
-    // Desfoque leve de 4px para manter o grão de vidro fosco visível e sutil
-    bCtx.filter = "blur(4px)";
+    // Desfoque leve de 5px para manter a textura fosca aveludada e suave
+    bCtx.filter = "blur(5px)";
     bCtx.drawImage(canvas, 0, 0);
 
     const texture = new THREE.CanvasTexture(blurCanvas);
@@ -91,13 +91,13 @@ function useFrostedGlassSkyTexture(activeProject) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Componente Sky Esfera 360° de Vidro Fosco Prateado
+   Componente Sky Esfera 360° de Cristal Metálico Escuro
 ───────────────────────────────────────────────────────────────── */
 export default function InsideCrystalEnvironment({ activeProject }) {
   const skyRef = useRef();
-  const skyTex = useFrostedGlassSkyTexture(activeProject);
+  const skyTex = useDarkCrystalSkyTexture(activeProject);
 
-  // Rotação sutil do ambiente
+  // Rotação ultra-suave
   useFrame((state) => {
     if (skyRef.current) {
       skyRef.current.rotation.y = state.clock.elapsedTime * 0.002;
