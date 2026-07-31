@@ -26,7 +26,7 @@ function useNoiseTexture() {
     const sctx = small.getContext("2d");
     const imgData = sctx.createImageData(smallSize, smallSize);
     for (let i = 0; i < imgData.data.length; i += 4) {
-      const v = 128 + (Math.random() - 0.5) * 40;
+      const v = 128 + (Math.sin(i * 12.9898) * 43758.5453 % 1 - 0.5) * 40;
       imgData.data[i] = imgData.data[i + 1] = v;
       imgData.data[i + 2] = 255;
       imgData.data[i + 3] = 255;
@@ -38,6 +38,7 @@ function useNoiseTexture() {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(3, 3);
+    // eslint-disable-next-line react-hooks/globals -- intentional global cache for texture reuse
     GLOBAL_NOISE_TEX = tex;
     return tex;
   }, []);
@@ -57,6 +58,7 @@ function useInnerBlobGeometry(radius = 1) {
       pos.setXYZ(i, v.x, v.y, v.z);
     }
     geo.computeVertexNormals();
+    // eslint-disable-next-line react-hooks/globals -- intentional global cache for geometry reuse
     GLOBAL_INNER_BLOB_GEO = geo;
     return geo;
   }, [radius]);
@@ -106,10 +108,7 @@ export default function CrystalMesh({
   modelPath = defaultConfig.defaultModel,
   projectData = null,
   seed = 1,
-  label,
-  sublabel,
   config = defaultConfig,
-  onHoverChange,
   onClick,
 }) {
   const groupRef = useRef();
@@ -171,6 +170,7 @@ export default function CrystalMesh({
 
   const wasDeformedRef = useRef(false);
 
+  // eslint-disable-next-line react-hooks/immutability -- Three.js geometry buffer mutation is intentional & performant
   useFrame((state) => {
     if (groupRef.current) groupRef.current.rotation.y += 0.003;
 
@@ -216,6 +216,7 @@ export default function CrystalMesh({
           const ny = normals[idx + 1];
           const nz = normals[idx + 2];
 
+          // eslint-disable-next-line react-hooks/immutability -- intentional vertex deformation
           pos[idx] = vx + nx * wave;
           pos[idx + 1] = vy + ny * wave;
           pos[idx + 2] = vz + nz * wave;
@@ -275,17 +276,11 @@ export default function CrystalMesh({
               const local = e.point.clone();
               mainMeshRef.current.worldToLocal(local);
               targetMouseLocal.current.copy(local);
-              if (!isHovering.current) {
-                isHovering.current = true;
-                if (onHoverChange) onHoverChange(true);
-              }
+              isHovering.current = true;
             }
           }}
           onPointerLeave={() => {
-            if (isHovering.current) {
-              isHovering.current = false;
-              if (onHoverChange) onHoverChange(false);
-            }
+            isHovering.current = false;
           }}
         >
           <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} />

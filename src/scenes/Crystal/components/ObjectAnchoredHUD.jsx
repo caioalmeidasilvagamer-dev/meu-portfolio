@@ -17,6 +17,12 @@ const ANCHORS = {
 
 const _tmpV = new THREE.Vector3();
 
+// Seeded PRNG para positions determinísticas (purity-safe)
+function seededRandom(seed) {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 export default function ObjectAnchoredHUD({
   crystalMeshRef,
   label = "PORTFOLIO_CO_01",
@@ -44,17 +50,17 @@ export default function ObjectAnchoredHUD({
   const scanTicks = useMemo(() => {
     const t = [];
     for (let i = 0; i < 20; i++) {
-      const angle = (i / 20) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-      const dist  = 140 + Math.random() * 100;
+      const angle = (i / 20) * Math.PI * 2 + (seededRandom(i * 7 + 1) - 0.5) * 0.5;
+      const dist  = 140 + seededRandom(i * 7 + 2) * 100;
       t.push({
         id: i,
         rx: Math.cos(angle) * dist,
-        ry: Math.sin(angle) * dist * 0.65,  // achatamento vertical para parecer oval
-        len: 6 + Math.random() * 10,
-        rot: Math.random() * 180,
-        baseOpacity: 0.15 + Math.random() * 0.3,
-        speed: 0.8 + Math.random() * 1.6,
-        phase: Math.random() * Math.PI * 2,
+        ry: Math.sin(angle) * dist * 0.65,
+        len: 6 + seededRandom(i * 7 + 3) * 10,
+        rot: seededRandom(i * 7 + 4) * 180,
+        baseOpacity: 0.15 + seededRandom(i * 7 + 5) * 0.3,
+        speed: 0.8 + seededRandom(i * 7 + 6) * 1.6,
+        phase: seededRandom(i * 7 + 7) * Math.PI * 2,
       });
     }
     return t;

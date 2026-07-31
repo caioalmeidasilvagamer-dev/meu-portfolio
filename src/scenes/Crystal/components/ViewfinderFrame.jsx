@@ -1,8 +1,6 @@
 // ViewfinderFrame.jsx
 // Overlay HTML em screen-space fixo (não gira com o modelo 3D)
 
-import React from "react";
-
 export default function ViewfinderFrame({ label, sublabel, onExplore, isHovered }) {
   return (
     <div

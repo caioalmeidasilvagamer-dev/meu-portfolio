@@ -12,14 +12,11 @@ import { crystalConfig } from "./config/crystalConfig";
 /* ------------------------------------------------------------------ */
 /* Loader HUD — mantém visível até download + compilação de shaders    */
 /* ------------------------------------------------------------------ */
-function CanvasLoader({ onHoldComplete }) {
-  const { active, progress } = useProgress();
-  const [ready, setReady] = useState(false);
+function LoaderHUD({ text, barWidth, onFadeEnd }) {
   const [fadingOut, setFadingOut] = useState(false);
 
-  // Quando ambas as condições são atendidas, espera 2 frames e inicia fade-out
   useEffect(() => {
-    if (!active && !ready && onHoldComplete) {
+    if (onFadeEnd) {
       let frame = 0;
       const countFrames = () => {
         frame++;
@@ -31,172 +28,89 @@ function CanvasLoader({ onHoldComplete }) {
       };
       requestAnimationFrame(countFrames);
     }
-  }, [active, ready, onHoldComplete]);
+  }, [onFadeEnd]);
 
   const handleTransitionEnd = useCallback(() => {
-    if (fadingOut) setReady(true);
-  }, [fadingOut]);
+    if (fadingOut && onFadeEnd) onFadeEnd();
+  }, [fadingOut, onFadeEnd]);
 
-  // Estado: download em progresso
-  if (active && !fadingOut) {
-    return (
+  return (
+    <div
+      onTransitionEnd={handleTransitionEnd}
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#ffffff",
+        fontFamily: "'Courier New', Courier, monospace",
+        background: "rgba(14, 22, 32, 0.45)",
+        backdropFilter: "blur(8px)",
+        zIndex: 50,
+        pointerEvents: "none",
+        opacity: fadingOut ? 0 : 1,
+        transition: fadingOut ? "opacity 0.4s ease-out" : undefined,
+      }}
+    >
+      <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
+        {text}
+      </div>
       <div
         style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ffffff",
-          fontFamily: "'Courier New', Courier, monospace",
-          background: "rgba(14, 22, 32, 0.45)",
-          backdropFilter: "blur(8px)",
-          zIndex: 50,
-          pointerEvents: "none",
+          width: "160px",
+          height: "3px",
+          background: "rgba(255, 255, 255, 0.15)",
+          borderRadius: "2px",
+          overflow: "hidden",
+          marginBottom: "10px",
         }}
       >
-        <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
-          INITIALIZING 3D ENVIRONMENT
-        </div>
         <div
           style={{
-            width: "160px",
-            height: "3px",
-            background: "rgba(255, 255, 255, 0.15)",
-            borderRadius: "2px",
-            overflow: "hidden",
-            marginBottom: "10px",
+            width: barWidth,
+            height: "100%",
+            background: "#7eb8e0",
+            boxShadow: "0 0 10px #7eb8e0",
+            transition: barWidth === "100%" ? undefined : "width 0.2s ease",
           }}
-        >
-          <div
-            style={{
-              width: `${progress}%`,
-              height: "100%",
-              background: "#7eb8e0",
-              boxShadow: "0 0 10px #7eb8e0",
-              transition: "width 0.2s ease",
-            }}
-          />
-        </div>
-        <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
-          {Math.floor(progress)}%
-        </div>
+        />
       </div>
-    );
+      <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
+        {barWidth === "100%" ? "100%" : `${barWidth}%`}
+      </div>
+    </div>
+  );
+}
+
+function CanvasLoader({ shadersCompiled, onDismiss }) {
+  const { active, progress } = useProgress();
+
+  // Estado: download em progresso
+  if (active) {
+    return <LoaderHUD text="INITIALIZING 3D ENVIRONMENT" barWidth={`${progress}%`} />;
   }
 
   // Estado: download completo, aguardando compilação de shaders
-  if (!active && !onHoldComplete) {
-    return (
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ffffff",
-          fontFamily: "'Courier New', Courier, monospace",
-          background: "rgba(14, 22, 32, 0.45)",
-          backdropFilter: "blur(8px)",
-          zIndex: 50,
-          pointerEvents: "none",
-        }}
-      >
-        <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
-          WARMING UP 3D ENVIRONMENT
-        </div>
-        <div
-          style={{
-            width: "160px",
-            height: "3px",
-            background: "rgba(255, 255, 255, 0.15)",
-            borderRadius: "2px",
-            overflow: "hidden",
-            marginBottom: "10px",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: "#7eb8e0",
-              boxShadow: "0 0 10px #7eb8e0",
-            }}
-          />
-        </div>
-        <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
-          100%
-        </div>
-      </div>
-    );
+  if (!shadersCompiled) {
+    return <LoaderHUD text="WARMING UP 3D ENVIRONMENT" barWidth="100%" />;
   }
 
-  // Fade-out: ambos prontos, transição suave
-  if (fadingOut) {
-    return (
-      <div
-        onTransitionEnd={handleTransitionEnd}
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ffffff",
-          fontFamily: "'Courier New', Courier, monospace",
-          background: "rgba(14, 22, 32, 0.45)",
-          backdropFilter: "blur(8px)",
-          zIndex: 50,
-          pointerEvents: "none",
-          opacity: 0,
-          transition: "opacity 0.4s ease-out",
-        }}
-      >
-        <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
-          WARMING UP 3D ENVIRONMENT
-        </div>
-        <div
-          style={{
-            width: "160px",
-            height: "3px",
-            background: "rgba(255, 255, 255, 0.15)",
-            borderRadius: "2px",
-            overflow: "hidden",
-            marginBottom: "10px",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              background: "#7eb8e0",
-              boxShadow: "0 0 10px #7eb8e0",
-            }}
-          />
-        </div>
-        <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
-          100%
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+  // Ambos prontos — fade-out e notifica pai quando terminar
+  return <LoaderHUD text="WARMING UP 3D ENVIRONMENT" barWidth="100%" onFadeEnd={onDismiss} />;
 }
 
 /* ------------------------------------------------------------------ */
 /* Compilador de Shaders Assíncrono — compileAsync via Three.js        */
 /* ------------------------------------------------------------------ */
-function ShaderCompiler({ onCompiled, index }) {
+function ShaderCompiler({ onCompiled, onCompileStart, index }) {
   const { gl, scene, camera } = useThree();
   const currentIndexRef = useRef(index);
 
   useEffect(() => {
     currentIndexRef.current = index;
+    onCompileStart();
     let cancelled = false;
     gl.compileAsync(scene, camera).then(() => {
       if (!cancelled && currentIndexRef.current === index) {
@@ -204,7 +118,7 @@ function ShaderCompiler({ onCompiled, index }) {
       }
     });
     return () => { cancelled = true; };
-  }, [gl, scene, camera, index, onCompiled]);
+  }, [gl, scene, camera, index, onCompiled, onCompileStart]);
 
   return null;
 }
@@ -213,8 +127,6 @@ function ShaderCompiler({ onCompiled, index }) {
 /* 1. Controlador de Câmera & Controls — Transição GSAP Fluida         */
 /* ------------------------------------------------------------------ */
 function CameraController({ activeProject, isTransitioning, controlsRef }) {
-  const { camera } = useThree();
-
   // Configura os limites do OrbitControls de acordo com o estado
   useEffect(() => {
     if (!controlsRef.current) return;
@@ -255,9 +167,53 @@ function StudioParticles() {
 /* ------------------------------------------------------------------ */
 /* 3. Componente Carrossel de Cristais Principal                     */
 /* ------------------------------------------------------------------ */
+const defaultItems = [
+  {
+    id: 1,
+    label: "PORTFOLIO_CO_01",
+    sublabel: "PUDGY PENGUINS",
+    modelPath: "/models/cristal.glb",
+    description:
+      "Coleção exclusiva e ecossistema digital imersivo em blockchain. Uma experiência visual de alto impacto construída com WebGL e físicas proceduralmente geradas.",
+    tags: ["WEBGL", "REACT THREE FIBER", "SHADERS", "BLOCKCHAIN"],
+    themeColor: "#7eb8e0",
+    innerModel: null,
+    innerScale: 0.6,
+    images: [],
+    projectUrl: "https://pudgypenguins.com",
+  },
+  {
+    id: 2,
+    label: "PORTFOLIO_CO_02",
+    sublabel: "ENERGIA SOLAR",
+    modelPath: "/models/cristal.glb",
+    description:
+      "Site institucional completo para empresa de energia solar fotovoltaica. Sistema de simulação de economia, integração com Google Maps para mapeamento de telhados e painel administrativo em tempo real.",
+    tags: ["REACT", "NODE.JS", "GOOGLE MAPS API", "THREE.JS"],
+    themeColor: "#f59e0b",
+    innerModel: null,
+    innerScale: 0.7,
+    images: [],
+    projectUrl: "https://seu-cliente-solar.com.br",
+  },
+  {
+    id: 3,
+    label: "PORTFOLIO_CO_03",
+    sublabel: "QUANTUM LABS",
+    modelPath: "/models/cristal.glb",
+    description:
+      "Plataforma Web3 experimental focada em micro-interações responsivas e estéticas translucidas de gelo e refração de luz.",
+    tags: ["GSAP", "DESIGN SYSTEM", "GLSL SHADERS"],
+    themeColor: "#a78bfa",
+    innerModel: null,
+    innerScale: 0.6,
+    images: [],
+    projectUrl: "#",
+  },
+];
+
 export default function CrystalCarousel({ items: customItems, onEnter: customOnEnter }) {
   const [index, setIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [shadersCompiled, setShadersCompiled] = useState(false);
@@ -266,59 +222,14 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const lensPassRef = useRef(null);
   const cameraRef = useRef(null);
 
-  const defaultItems = [
-    {
-      id: 1,
-      label: "PORTFOLIO_CO_01",
-      sublabel: "PUDGY PENGUINS",
-      modelPath: "/models/cristal.glb",
-      description:
-        "Coleção exclusiva e ecossistema digital imersivo em blockchain. Uma experiência visual de alto impacto construída com WebGL e físicas proceduralmente geradas.",
-      tags: ["WEBGL", "REACT THREE FIBER", "SHADERS", "BLOCKCHAIN"],
-      themeColor: "#7eb8e0",
-      innerModel: null,
-      innerScale: 0.6,
-      images: [],
-      projectUrl: "https://pudgypenguins.com",
-    },
-    {
-      id: 2,
-      label: "PORTFOLIO_CO_02",
-      sublabel: "ENERGIA SOLAR",
-      modelPath: "/models/cristal.glb",
-      description:
-        "Site institucional completo para empresa de energia solar fotovoltaica. Sistema de simulação de economia, integração com Google Maps para mapeamento de telhados e painel administrativo em tempo real.",
-      tags: ["REACT", "NODE.JS", "GOOGLE MAPS API", "THREE.JS"],
-      themeColor: "#f59e0b",
-      innerModel: null,
-      innerScale: 0.7,
-      images: [],
-      projectUrl: "https://seu-cliente-solar.com.br",
-    },
-    {
-      id: 3,
-      label: "PORTFOLIO_CO_03",
-      sublabel: "QUANTUM LABS",
-      modelPath: "/models/cristal.glb",
-      description:
-        "Plataforma Web3 experimental focada em micro-interações responsivas e estéticas translucidas de gelo e refração de luz.",
-      tags: ["GSAP", "DESIGN SYSTEM", "GLSL SHADERS"],
-      themeColor: "#a78bfa",
-      innerModel: null,
-      innerScale: 0.6,
-      images: [],
-      projectUrl: "#",
-    },
-  ];
-
   const items = customItems || defaultItems;
   const currentItem = items[index];
 
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const next = useCallback(() => setIndex((i) => Math.min(items.length - 1, i + 1)), [items.length]);
-  const handleModelCompiled = useCallback(() => {
-    setShadersCompiled(true);
-  }, []);
+  const handleCompileStart = useCallback(() => setShadersCompiled(false), []);
+  const handleModelCompiled = useCallback(() => setShadersCompiled(true), []);
+  const handleLoaderDismiss = useCallback(() => setShadersCompiled(false), []);
 
   // Voo Contínuo de Entrada para o Interior do Cristal (GSAP Timeline Perfeita)
   const handleEnterProject = useCallback(() => {
@@ -438,7 +349,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       />
 
       {/* Loader HUD — mantido até download + compilação de shaders */}
-      <CanvasLoader onHoldComplete={shadersCompiled} />
+      <CanvasLoader shadersCompiled={shadersCompiled} onDismiss={handleLoaderDismiss} />
 
       {/* Canvas 3D
           frameloop: mantido "always" (default). O cristal tem rotação idle contínua
@@ -507,13 +418,12 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               seed={index + 1}
               label={currentItem.label}
               sublabel={currentItem.sublabel}
-              onHoverChange={setIsHovered}
               onClick={handleEnterProject}
             />
           </group>
 
           {/* Compilador de shaders assíncrono — compileAsync previne stall no first frame */}
-          <ShaderCompiler onCompiled={handleModelCompiled} index={index} />
+          <ShaderCompiler onCompiled={handleModelCompiled} onCompileStart={handleCompileStart} index={index} />
         </Suspense>
       </Canvas>
 
