@@ -1,13 +1,13 @@
 // InsideCrystalEnvironment.jsx
-// Textura HDRI de Esfera 360° de Cristal de Rocha / Slate Metálico Escuro (Dark Frosted Crystal Ambient)
-// Recria exatamente a estética escura de cristal de rocha azul-cinza metálico com reflexos difusos
+// Textura HDRI 360° 100% Seamless (Sem Costuras / Sem Linha de Junção / Fundo Infinito)
+// Cristal Metálico Escuro Fosco (Dark Slate Metallic Frosted Glass)
 
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 /* ─────────────────────────────────────────────────────────────────
-   Gerador de Textura de Cristal Metálico Escuro (Dark Slate Frosted Crystal)
+   Gerador de Textura 360° 100% Seamless (Equiretangular Perfeito)
 ───────────────────────────────────────────────────────────────── */
 function useDarkCrystalSkyTexture(activeProject) {
   const seed = activeProject?.id ?? 1;
@@ -27,33 +27,40 @@ function useDarkCrystalSkyTexture(activeProject) {
       return x - Math.floor(x);
     };
 
-    // ─── 1. Fundo Gradiente Slate Escuro (Azul-Cinza Metálico Profundo) ───
-    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0.0, "#2c3e52"); // Slate azul metálico no topo-esquerdo
-    bgGrad.addColorStop(0.35, "#1e2c3c"); // Tom médio cristalino escuro
-    bgGrad.addColorStop(0.70, "#15202c"); // Azul obsidiana escuro
-    bgGrad.addColorStop(1.0, "#0b121a");  // Base quase preta slate
+    // ─── 1. Gradiente Estritamente Vertical (x=0 e x=W são 100% idênticos) ───
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0.00, "#223244"); // Zenith / Topo slate azul metálico
+    bgGrad.addColorStop(0.30, "#192634"); // Tom médio cristalino escuro
+    bgGrad.addColorStop(0.70, "#121b26"); // Equador obsidiana escuro
+    bgGrad.addColorStop(1.00, "#0a1017"); // Nadir / Base escura
 
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // ─── 2. Nuvens de Reflexo Metálico / Specular Highlights Escuros ───
-    for (let i = 0; i < 22; i++) {
+    // ─── 2. Nuvens de Reflexo Metálico com Wrapping Horizontal 360° ───
+    for (let i = 0; i < 20; i++) {
       const cx = rng(i * 37 + 5) * W;
-      const cy = rng(i * 41 + 10) * H;
-      const r = 120 + rng(i * 43) * 380;
-      const alpha = 0.08 + rng(i * 47) * 0.22;
+      const cy = 100 + rng(i * 41 + 10) * (H - 200); // evita pólos extremados
+      const r = 140 + rng(i * 43) * 360;
+      const alpha = 0.08 + rng(i * 47) * 0.20;
 
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, `rgba(165, 195, 220, ${alpha.toFixed(2)})`);
-      g.addColorStop(0.4, `rgba(80, 115, 145, ${(alpha * 0.5).toFixed(2)})`);
-      g.addColorStop(1, "rgba(0, 0, 0, 0)");
+      // Desenha a nuvem luminosa com repetição para x < 0 e x > W (Seamless Wrap)
+      const offsets = [0, -W, W];
+      for (const ox of offsets) {
+        const x = cx + ox;
+        if (x + r < 0 || x - r > W) continue;
 
-      ctx.fillStyle = g;
-      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+        const g = ctx.createRadialGradient(x, cy, 0, x, cy, r);
+        g.addColorStop(0.0, `rgba(160, 190, 215, ${alpha.toFixed(3)})`);
+        g.addColorStop(0.4, `rgba(75, 110, 140, ${(alpha * 0.45).toFixed(3)})`);
+        g.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r, cy - r, r * 2, r * 2);
+      }
     }
 
-    // ─── 3. Micro-Grânulos de Rocha/Gelo Escuro (Dark Frosted Grain) ───
+    // ─── 3. Micro-Grânulos Foscos Periodicamentes Perfeitos (Seamless Noise) ───
     const imgData = ctx.getImageData(0, 0, W, H);
     const data = imgData.data;
 
@@ -61,43 +68,51 @@ function useDarkCrystalSkyTexture(activeProject) {
       for (let x = 0; x < W; x++) {
         const idx = (y * W + x) * 4;
 
-        // Ruído sutil determinístico de granulação fosca sobre a pedra metálica escura
-        const n1 = rng(x * 12.9898 + y * 78.233);
-        const n2 = rng(x * 39.421 + y * 11.149);
-        const grain = (n1 - 0.5) * 18 + (n2 - 0.5) * 9;
+        // Ruído periódico horizontal usando sin/cos de 2*PI*x/W
+        const uAngle = (x / W) * Math.PI * 2;
+        const vAngle = (y / H) * Math.PI;
+
+        const nx = Math.cos(uAngle) * 15.0;
+        const ny = Math.sin(uAngle) * 15.0;
+        const nz = Math.sin(vAngle) * 15.0;
+
+        const n1 = rng(nx * 12.9898 + ny * 78.233 + nz * 45.164);
+        const n2 = rng(nx * 39.421 + ny * 11.149 + nz * 93.712);
+        const grain = (n1 - 0.5) * 16 + (n2 - 0.5) * 8;
 
         data[idx]     = Math.min(255, Math.max(0, data[idx] + grain * 0.8));
         data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + grain * 0.9));
-        data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + grain * 1.1)); // tom azul metálico
+        data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + grain * 1.1));
       }
     }
 
     ctx.putImageData(imgData, 0, 0);
 
-    // ─── 4. Passagem de Desfoque Fino (Soft Dark Diffusion) ───
+    // ─── 4. Passagem de Desfoque Fino (Soft Diffusion) ───
     const blurCanvas = document.createElement("canvas");
     blurCanvas.width = W;
     blurCanvas.height = H;
     const bCtx = blurCanvas.getContext("2d");
 
-    // Desfoque leve de 5px para manter a textura fosca aveludada e suave
-    bCtx.filter = "blur(5px)";
+    bCtx.filter = "blur(6px)";
     bCtx.drawImage(canvas, 0, 0);
 
     const texture = new THREE.CanvasTexture(blurCanvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.needsUpdate = true;
     return texture;
   }, [seed]);
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Componente Sky Esfera 360° de Cristal Metálico Escuro
+   Componente Sky Esfera 360° Sem Costuras (Seamless Infinite Sky)
 ───────────────────────────────────────────────────────────────── */
 export default function InsideCrystalEnvironment({ activeProject }) {
   const skyRef = useRef();
   const skyTex = useDarkCrystalSkyTexture(activeProject);
 
-  // Rotação ultra-suave
+  // Rotação suave sem solavancos
   useFrame((state) => {
     if (skyRef.current) {
       skyRef.current.rotation.y = state.clock.elapsedTime * 0.002;
