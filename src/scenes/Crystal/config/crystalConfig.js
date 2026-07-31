@@ -12,6 +12,8 @@ export const crystalConfig = {
   defaultModel: "/models/cristal.glb",
 
   // Configuração do Material de Transmissão do Cristal (MeshTransmissionMaterial)
+  // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
+  // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
   material: {
     transmission: 0.98,
     roughness: 0.28,
@@ -27,9 +29,11 @@ export const crystalConfig = {
     clearcoatRoughness: 0.2,
     attenuationColor: "#9ca6b2",
     attenuationDistance: 2.5,
-    resolution: 256,
-    samples: 4,
-    backside: true,
+    resolution: 128,  // 256→128: 4× menor render target; roughness máscara artifacts
+    samples: 4,       // mantido: já é o mínimo para antialiasing aceitável
+    backside: true,   // mantido: essencial para efeito de cristal translúcido
+    // transmissionSampler: true,  // alternativa: reusa buffer global (economia extra),
+                                    // mas cristais não "veem" outros objetos transmissivos atrás
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)

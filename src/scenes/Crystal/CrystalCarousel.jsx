@@ -10,57 +10,203 @@ import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
 import { crystalConfig } from "./config/crystalConfig";
 
 /* ------------------------------------------------------------------ */
-/* Loader HUD Glassmorphic de Carregamento Inicial (0ms Feedback)      */
+/* Loader HUD — mantém visível até download + compilação de shaders    */
 /* ------------------------------------------------------------------ */
-function CanvasLoader() {
+function CanvasLoader({ onHoldComplete }) {
   const { active, progress } = useProgress();
-  if (!active) return null;
+  const [ready, setReady] = useState(false);
+  const [fadingOut, setFadingOut] = useState(false);
 
-  return (
-    <div
-      style={{
-        position: "absolute",
-        inset: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#ffffff",
-        fontFamily: "'Courier New', Courier, monospace",
-        background: "rgba(14, 22, 32, 0.45)",
-        backdropFilter: "blur(8px)",
-        zIndex: 50,
-        pointerEvents: "none",
-      }}
-    >
-      <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
-        INITIALIZING 3D ENVIRONMENT
-      </div>
+  // Quando ambas as condições são atendidas, espera 2 frames e inicia fade-out
+  useEffect(() => {
+    if (!active && !ready && onHoldComplete) {
+      let frame = 0;
+      const countFrames = () => {
+        frame++;
+        if (frame >= 2) {
+          setFadingOut(true);
+        } else {
+          requestAnimationFrame(countFrames);
+        }
+      };
+      requestAnimationFrame(countFrames);
+    }
+  }, [active, ready, onHoldComplete]);
+
+  const handleTransitionEnd = useCallback(() => {
+    if (fadingOut) setReady(true);
+  }, [fadingOut]);
+
+  // Estado: download em progresso
+  if (active && !fadingOut) {
+    return (
       <div
         style={{
-          width: "160px",
-          height: "3px",
-          background: "rgba(255, 255, 255, 0.15)",
-          borderRadius: "2px",
-          overflow: "hidden",
-          marginBottom: "10px",
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#ffffff",
+          fontFamily: "'Courier New', Courier, monospace",
+          background: "rgba(14, 22, 32, 0.45)",
+          backdropFilter: "blur(8px)",
+          zIndex: 50,
+          pointerEvents: "none",
         }}
       >
+        <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
+          INITIALIZING 3D ENVIRONMENT
+        </div>
         <div
           style={{
-            width: `${progress}%`,
-            height: "100%",
-            background: "#7eb8e0",
-            boxShadow: "0 0 10px #7eb8e0",
-            transition: "width 0.2s ease",
+            width: "160px",
+            height: "3px",
+            background: "rgba(255, 255, 255, 0.15)",
+            borderRadius: "2px",
+            overflow: "hidden",
+            marginBottom: "10px",
           }}
-        />
+        >
+          <div
+            style={{
+              width: `${progress}%`,
+              height: "100%",
+              background: "#7eb8e0",
+              boxShadow: "0 0 10px #7eb8e0",
+              transition: "width 0.2s ease",
+            }}
+          />
+        </div>
+        <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
+          {Math.floor(progress)}%
+        </div>
       </div>
-      <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
-        {Math.floor(progress)}%
+    );
+  }
+
+  // Estado: download completo, aguardando compilação de shaders
+  if (!active && !onHoldComplete) {
+    return (
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#ffffff",
+          fontFamily: "'Courier New', Courier, monospace",
+          background: "rgba(14, 22, 32, 0.45)",
+          backdropFilter: "blur(8px)",
+          zIndex: 50,
+          pointerEvents: "none",
+        }}
+      >
+        <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
+          WARMING UP 3D ENVIRONMENT
+        </div>
+        <div
+          style={{
+            width: "160px",
+            height: "3px",
+            background: "rgba(255, 255, 255, 0.15)",
+            borderRadius: "2px",
+            overflow: "hidden",
+            marginBottom: "10px",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: "#7eb8e0",
+              boxShadow: "0 0 10px #7eb8e0",
+            }}
+          />
+        </div>
+        <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
+          100%
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Fade-out: ambos prontos, transição suave
+  if (fadingOut) {
+    return (
+      <div
+        onTransitionEnd={handleTransitionEnd}
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#ffffff",
+          fontFamily: "'Courier New', Courier, monospace",
+          background: "rgba(14, 22, 32, 0.45)",
+          backdropFilter: "blur(8px)",
+          zIndex: 50,
+          pointerEvents: "none",
+          opacity: 0,
+          transition: "opacity 0.4s ease-out",
+        }}
+      >
+        <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
+          WARMING UP 3D ENVIRONMENT
+        </div>
+        <div
+          style={{
+            width: "160px",
+            height: "3px",
+            background: "rgba(255, 255, 255, 0.15)",
+            borderRadius: "2px",
+            overflow: "hidden",
+            marginBottom: "10px",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: "#7eb8e0",
+              boxShadow: "0 0 10px #7eb8e0",
+            }}
+          />
+        </div>
+        <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
+          100%
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Compilador de Shaders Assíncrono — compileAsync via Three.js        */
+/* ------------------------------------------------------------------ */
+function ShaderCompiler({ onCompiled, index }) {
+  const { gl, scene, camera } = useThree();
+  const currentIndexRef = useRef(index);
+
+  useEffect(() => {
+    currentIndexRef.current = index;
+    let cancelled = false;
+    gl.compileAsync(scene, camera).then(() => {
+      if (!cancelled && currentIndexRef.current === index) {
+        onCompiled();
+      }
+    });
+    return () => { cancelled = true; };
+  }, [gl, scene, camera, index, onCompiled]);
+
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -114,6 +260,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const [isHovered, setIsHovered] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [shadersCompiled, setShadersCompiled] = useState(false);
 
   const controlsRef = useRef(null);
   const lensPassRef = useRef(null);
@@ -169,6 +316,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const next = useCallback(() => setIndex((i) => Math.min(items.length - 1, i + 1)), [items.length]);
+  const handleModelCompiled = useCallback(() => {
+    setShadersCompiled(true);
+  }, []);
 
   // Voo Contínuo de Entrada para o Interior do Cristal (GSAP Timeline Perfeita)
   const handleEnterProject = useCallback(() => {
@@ -287,10 +437,15 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         }}
       />
 
-      {/* Loader HUD de Carregamento Inicial (useProgress) */}
-      <CanvasLoader />
+      {/* Loader HUD — mantido até download + compilação de shaders */}
+      <CanvasLoader onHoldComplete={shadersCompiled} />
 
-      {/* Canvas 3D */}
+      {/* Canvas 3D
+          frameloop: mantido "always" (default). O cristal tem rotação idle contínua
+          (groupRef.rotation.y += 0.003 por frame) e MeshTransmissionMaterial exige
+          um render pass dedicado a cada frame. frameloop="demand" adicionaria
+          complexidade (chamar invalidate() em toda interação) sem benefício mensurável.
+          Se o portfólio crescer para múltiplas rotas, considerar React.lazy() + Suspense. */}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, dpr: [1, 2] }}
@@ -356,6 +511,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               onClick={handleEnterProject}
             />
           </group>
+
+          {/* Compilador de shaders assíncrono — compileAsync previne stall no first frame */}
+          <ShaderCompiler onCompiled={handleModelCompiled} index={index} />
         </Suspense>
       </Canvas>
 
