@@ -3,7 +3,7 @@
 
 import { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF } from "@react-three/drei";
 import gsap from "gsap";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
