@@ -1,86 +1,40 @@
 // CrystalCarousel.jsx
-// Carrossel de Cristais 3D com Voo de Câmera Contínuo (Sem Cortes) para Dentro do Cristal
-// e Ambiente 3D Interno Facetado com Espelhamento e Refração
+// Carrossel de Cristais 3D com Voo de Câmera Contínuo (60 FPS, Zero-Lag, Shader-Warm)
 
-import { Suspense, useState, useCallback, useRef } from "react";
+import { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, OrbitControls } from "@react-three/drei";
 import gsap from "gsap";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
 import { crystalConfig } from "./config/crystalConfig";
 
 /* ------------------------------------------------------------------ */
-/* 1. Controlador de Câmera — Voo Fluido para Dentro do Cristal        */
+/* 1. Controlador de Câmera & Controls — Transição GSAP Fluida         */
 /* ------------------------------------------------------------------ */
-function CameraController({ zoomTriggerRef }) {
+function CameraController({ activeProject, isTransitioning, controlsRef }) {
   const { camera } = useThree();
 
-  // Guarda o estado original da câmera para restaurar exatamente ao sair
-  const snapshot = useRef(null);
+  // Configura os limites do OrbitControls de acordo com o estado
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    const controls = controlsRef.current;
 
-  zoomTriggerRef.current = {
-    zoomIn: (onComplete) => {
-      // Captura o estado exato antes de entrar
-      snapshot.current = {
-        x: camera.position.x,
-        y: camera.position.y,
-        z: camera.position.z,
-        fov: camera.fov,
-        near: camera.near,
-      };
-
-      gsap.timeline()
-        .to(camera.position, {
-          x: 0,
-          y: 0,
-          z: 0.05,
-          duration: 1.8,
-          ease: "power2.inOut",
-        })
-        .to(
-          camera,
-          {
-            near: 0.001,
-            fov: 65,
-            duration: 1.8,
-            ease: "power2.inOut",
-            onUpdate: () => camera.updateProjectionMatrix(),
-          },
-          0
-        )
-        .call(() => {
-          if (onComplete) onComplete();
-        });
-    },
-    zoomOut: (onComplete) => {
-      // Restaura exatamente o estado original capturado antes de entrar
-      const s = snapshot.current || { x: 0, y: 0, z: 5, fov: 45, near: 0.1 };
-
-      gsap.timeline()
-        .to(camera.position, {
-          x: s.x,
-          y: s.y,
-          z: s.z,
-          duration: 1.4,
-          ease: "power2.inOut",
-        })
-        .to(
-          camera,
-          {
-            near: s.near,
-            fov: s.fov,
-            duration: 1.4,
-            ease: "power2.inOut",
-            onUpdate: () => camera.updateProjectionMatrix(),
-          },
-          0
-        )
-        .call(() => {
-          if (onComplete) onComplete();
-        });
-    },
-  };
+    if (isTransitioning) {
+      controls.enabled = false;
+    } else if (activeProject) {
+      controls.enabled = true;
+      controls.minPolarAngle = 0;
+      controls.maxPolarAngle = Math.PI;
+      controls.rotateSpeed = 0.5;
+    } else {
+      controls.enabled = true;
+      controls.minPolarAngle = Math.PI / 2;
+      controls.maxPolarAngle = Math.PI / 2;
+      controls.rotateSpeed = 0.8;
+      controls.target.set(0, 0, 0);
+    }
+  }, [activeProject, isTransitioning, controlsRef]);
 
   return null;
 }
@@ -105,8 +59,11 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const [index, setIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
-  const zoomTriggerRef = useRef(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const controlsRef = useRef(null);
   const lensPassRef = useRef(null);
+  const cameraRef = useRef(null);
 
   const defaultItems = [
     {
@@ -132,9 +89,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         "Site institucional completo para empresa de energia solar fotovoltaica. Sistema de simulação de economia, integração com Google Maps para mapeamento de telhados e painel administrativo em tempo real.",
       tags: ["REACT", "NODE.JS", "GOOGLE MAPS API", "THREE.JS"],
       themeColor: "#f59e0b",
-      innerModel: null,       // substitua por "/models/painel_solar.glb" quando tiver o arquivo
+      innerModel: null,
       innerScale: 0.7,
-      images: [],             // substitua por ["/projects/solar1.jpg", "/projects/solar2.jpg"]
+      images: [],
       projectUrl: "https://seu-cliente-solar.com.br",
     },
     {
@@ -159,49 +116,117 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const next = useCallback(() => setIndex((i) => Math.min(items.length - 1, i + 1)), [items.length]);
 
-  // Voo Contínuo de Entrada para o Interior do Cristal (Sem Cortes, 60fps)
+  // Voo Contínuo de Entrada para o Interior do Cristal (GSAP Timeline Perfeita)
   const handleEnterProject = useCallback(() => {
-    if (!zoomTriggerRef.current || activeProject) return;
+    if (activeProject || isTransitioning || !cameraRef.current) return;
 
-    // 1. Inicia o voo suave de câmera imediatamente
-    zoomTriggerRef.current.zoomIn();
+    setIsTransitioning(true);
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (controls) controls.enabled = false;
 
-    // 2. Transição de refração de lente sincronizada no ponto de travessia da casca
-    gsap.timeline()
-      .to(lensPassRef.current, { opacity: 0.9, duration: 0.4, delay: 0.65, ease: "power2.in" })
-      .call(() => {
-        setActiveProject(currentItem);
-        if (customOnEnter) customOnEnter(currentItem);
-      })
-      .to(lensPassRef.current, { opacity: 0, duration: 0.55, ease: "power2.out" });
-  }, [currentItem, activeProject, customOnEnter]);
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setIsTransitioning(false);
+      },
+    });
+
+    // 1. Animação de voo da câmera para o centro do cristal
+    tl.to(camera.position, {
+      x: 0,
+      y: 0,
+      z: 0.05,
+      duration: 1.6,
+      ease: "power2.inOut",
+    }, 0);
+
+    tl.to(camera, {
+      near: 0.001,
+      fov: 65,
+      duration: 1.6,
+      ease: "power2.inOut",
+      onUpdate: () => camera.updateProjectionMatrix(),
+    }, 0);
+
+    // 2. Transição suave do lens pass exatamente na travessia da casca
+    tl.to(lensPassRef.current, {
+      opacity: 0.85,
+      duration: 0.45,
+      ease: "power2.in",
+    }, 0.5);
+
+    tl.call(() => {
+      setActiveProject(currentItem);
+      if (customOnEnter) customOnEnter(currentItem);
+    }, null, 0.95);
+
+    tl.to(lensPassRef.current, {
+      opacity: 0,
+      duration: 0.55,
+      ease: "power2.out",
+    }, 0.95);
+  }, [currentItem, activeProject, isTransitioning, customOnEnter]);
 
   // Retorno Suave da Câmera para Fora do Cristal
   const handleBackToCarousel = useCallback(() => {
-    if (!zoomTriggerRef.current) return;
+    if (!activeProject || isTransitioning || !cameraRef.current) return;
 
-    gsap.timeline()
-      // 1. Cobre a tela completamente primeiro (esconde o interior antes de qualquer swap)
-      .to(lensPassRef.current, { opacity: 1, duration: 0.3, ease: "power2.in" })
-      // 2. Com a tela coberta: troca o estado + inicia o voo de câmera de volta
-      .call(() => {
-        setActiveProject(null);
-        zoomTriggerRef.current.zoomOut();
-      })
-      // 3. Espera 0.4s (tempo para o shader do CrystalMesh compilar + câmera começar a se mover)
-      // 4. Desfoca gradualmente revelando a câmera já em movimento de volta ao cristal
-      .to(lensPassRef.current, { opacity: 0, duration: 1.1, delay: 0.35, ease: "power2.out" });
-  }, []);
+    setIsTransitioning(true);
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (controls) controls.enabled = false;
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setIsTransitioning(false);
+      },
+    });
+
+    // 1. Cobertura suave de transição
+    tl.to(lensPassRef.current, {
+      opacity: 0.9,
+      duration: 0.4,
+      ease: "power2.in",
+    }, 0);
+
+    // 2. Troca de estado visual de 3D e reseta posição da câmera
+    tl.call(() => {
+      setActiveProject(null);
+    }, null, 0.35);
+
+    // 3. Voo da câmera para fora
+    tl.to(camera.position, {
+      x: 0,
+      y: 0,
+      z: 5,
+      duration: 1.4,
+      ease: "power2.inOut",
+    }, 0.35);
+
+    tl.to(camera, {
+      near: 0.1,
+      fov: 45,
+      duration: 1.4,
+      ease: "power2.inOut",
+      onUpdate: () => camera.updateProjectionMatrix(),
+    }, 0.35);
+
+    tl.to(lensPassRef.current, {
+      opacity: 0,
+      duration: 0.6,
+      ease: "power2.out",
+    }, 0.75);
+  }, [activeProject, isTransitioning]);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#8f97a1", overflow: "hidden" }}>
-      {/* Overlay de Passagem (Refração de Lente) — tom escuro do interior do cristal */}
+      {/* Overlay de Passagem de Refração de Lente (Transição Fluida) */}
       <div
         ref={lensPassRef}
         style={{
           position: "fixed",
           inset: 0,
-          background: "#141e28",
+          background: "radial-gradient(circle at center, #1b2836 0%, #101923 100%)",
           opacity: 0,
           pointerEvents: "none",
           zIndex: 999,
@@ -212,9 +237,16 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, dpr: [1, 2] }}
+        onCreated={({ camera }) => {
+          cameraRef.current = camera;
+        }}
       >
         <Suspense fallback={null}>
-          <CameraController zoomTriggerRef={zoomTriggerRef} />
+          <CameraController
+            activeProject={activeProject}
+            isTransitioning={isTransitioning}
+            controlsRef={controlsRef}
+          />
           <color attach="background" args={[crystalConfig.environment.backgroundColor]} />
           <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
           <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
@@ -240,44 +272,31 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             <StudioParticles />
           </group>
 
-          {/* Sky 360° interno — APENAS quando dentro do cristal (nunca visível de fora através do vidro) */}
-          {activeProject && <InsideCrystalEnvironment activeProject={activeProject} />}
+          {/* Sky 360° interno — visível apenas quando dentro */}
+          <group visible={!!activeProject}>
+            <InsideCrystalEnvironment activeProject={activeProject || currentItem} />
+          </group>
 
-          {/* Modelo 3D do cristal — visível de fora, montado apenas quando não está dentro */}
-          {!activeProject && (
-            <group key={index}>
-              <CrystalMesh
-                modelPath={currentItem.modelPath || crystalConfig.defaultModel}
-                projectData={currentItem}
-                seed={index + 1}
-                label={currentItem.label}
-                sublabel={currentItem.sublabel}
-                onHoverChange={setIsHovered}
-                onClick={handleEnterProject}
-              />
-            </group>
-          )}
+          {/* Modelo 3D do cristal — mantido montado no Canvas para manter os shaders quentes no WebGL */}
+          <group key={index} visible={!activeProject}>
+            <CrystalMesh
+              modelPath={currentItem.modelPath || crystalConfig.defaultModel}
+              projectData={currentItem}
+              seed={index + 1}
+              label={currentItem.label}
+              sublabel={currentItem.sublabel}
+              onHoverChange={setIsHovered}
+              onClick={handleEnterProject}
+            />
+          </group>
 
-          {/* Fora do cristal: orbit horizontal */}
-          {!activeProject && (
-            <OrbitControls
-              enableZoom={false}
-              enablePan={false}
-              minPolarAngle={Math.PI / 2}
-              maxPolarAngle={Math.PI / 2}
-              rotateSpeed={0.8}
-              makeDefault
-            />
-          )}
-          {/* Dentro do cristal: orbit 360° livre para olhar ao redor */}
-          {activeProject && (
-            <OrbitControls
-              enableZoom={false}
-              enablePan={false}
-              rotateSpeed={0.5}
-              makeDefault
-            />
-          )}
+          {/* Instância única de OrbitControls — evita re-montar event listeners */}
+          <OrbitControls
+            ref={controlsRef}
+            enableZoom={false}
+            enablePan={false}
+            makeDefault
+          />
         </Suspense>
       </Canvas>
 
