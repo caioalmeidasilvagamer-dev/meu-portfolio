@@ -78,7 +78,7 @@ function LoaderHUD({ text, barWidth, onFadeEnd }) {
         />
       </div>
       <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
-        {barWidth === "100%" ? "100%" : `${barWidth}%`}
+        {barWidth === "100%" ? "100%" : barWidth}
       </div>
     </div>
   );
