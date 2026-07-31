@@ -181,15 +181,16 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
     if (!zoomTriggerRef.current) return;
 
     // 1. Inicia a saída da câmera imediatamente
-    zoomTriggerRef.current.zoomOut();
+    zoomTriggerRef.current.zoomOut(() => {
+      // setActiveProject(null) é chamado apenas quando a câmera chegou de volta
+      // para evitar o recompile do shader do CrystalMesh no meio da animação
+      setActiveProject(null);
+    });
 
-    // 2. Transição de lente na saída
+    // 2. Flash de lente na saída (cosmético, não bloqueia)
     gsap.timeline()
-      .to(lensPassRef.current, { opacity: 0.85, duration: 0.35, ease: "power2.in" })
-      .call(() => {
-        setActiveProject(null);
-      })
-      .to(lensPassRef.current, { opacity: 0, duration: 0.5, ease: "power2.out" });
+      .to(lensPassRef.current, { opacity: 0.7, duration: 0.3, delay: 0.05, ease: "power1.in" })
+      .to(lensPassRef.current, { opacity: 0, duration: 0.6, ease: "power1.out" });
   }, []);
 
   return (
@@ -216,17 +217,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         <Suspense fallback={null}>
           <CameraController zoomTriggerRef={zoomTriggerRef} />
           <color attach="background" args={[crystalConfig.environment.backgroundColor]} />
-          {!activeProject && (
-            <fog
-              attach="fog"
-              args={[
-                crystalConfig.environment.fog.color,
-                crystalConfig.environment.fog.near,
-                crystalConfig.environment.fog.far,
-              ]}
-            />
-          )}
-
           <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
           <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
           <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
@@ -238,12 +228,23 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             <Lightformer form="ring" intensity={1.5} color="#ffffff" scale={3} position={[0, 2, -6]} target={[0, 0, 0]} />
           </Environment>
 
-          {!activeProject && <StudioParticles />}
+          {/* Partículas e névoa da cena externa */}
+          <group visible={!activeProject}>
+            <fog
+              attach="fog"
+              args={[
+                crystalConfig.environment.fog.color,
+                crystalConfig.environment.fog.near,
+                crystalConfig.environment.fog.far,
+              ]}
+            />
+            <StudioParticles />
+          </group>
 
-          {/* Quando a câmera entra no cristal, apenas a Sky Texture de Cristal é exibida */}
+          {/* Sky 360° interno — APENAS quando dentro do cristal (nunca visível de fora através do vidro) */}
           {activeProject && <InsideCrystalEnvironment activeProject={activeProject} />}
 
-          {/* Modelo 3D do cristal (exibido apenas quando FORA do cristal) */}
+          {/* Modelo 3D do cristal — visível de fora, montado apenas quando não está dentro */}
           {!activeProject && (
             <group key={index}>
               <CrystalMesh
