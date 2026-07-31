@@ -215,14 +215,16 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         <Suspense fallback={null}>
           <CameraController zoomTriggerRef={zoomTriggerRef} />
           <color attach="background" args={[crystalConfig.environment.backgroundColor]} />
-          <fog
-            attach="fog"
-            args={[
-              crystalConfig.environment.fog.color,
-              crystalConfig.environment.fog.near,
-              crystalConfig.environment.fog.far,
-            ]}
-          />
+          {!activeProject && (
+            <fog
+              attach="fog"
+              args={[
+                crystalConfig.environment.fog.color,
+                crystalConfig.environment.fog.near,
+                crystalConfig.environment.fog.far,
+              ]}
+            />
+          )}
 
           <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
           <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
@@ -235,22 +237,25 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             <Lightformer form="ring" intensity={1.5} color="#ffffff" scale={3} position={[0, 2, -6]} target={[0, 0, 0]} />
           </Environment>
 
-          <StudioParticles />
+          {!activeProject && <StudioParticles />}
 
-          {/* Quando a câmera entra no cristal, o Ambiente 3D Interno Espelhado ganha vida */}
+          {/* Quando a câmera entra no cristal, apenas a Sky Texture de Cristal é exibida */}
           {activeProject && <InsideCrystalEnvironment activeProject={activeProject} />}
 
-          <group key={index}>
-            <CrystalMesh
-              modelPath={currentItem.modelPath || crystalConfig.defaultModel}
-              projectData={currentItem}
-              seed={index + 1}
-              label={currentItem.label}
-              sublabel={currentItem.sublabel}
-              onHoverChange={setIsHovered}
-              onClick={handleEnterProject}
-            />
-          </group>
+          {/* Modelo 3D do cristal (exibido apenas quando FORA do cristal) */}
+          {!activeProject && (
+            <group key={index}>
+              <CrystalMesh
+                modelPath={currentItem.modelPath || crystalConfig.defaultModel}
+                projectData={currentItem}
+                seed={index + 1}
+                label={currentItem.label}
+                sublabel={currentItem.sublabel}
+                onHoverChange={setIsHovered}
+                onClick={handleEnterProject}
+              />
+            </group>
+          )}
 
           {/* Fora do cristal: orbit horizontal */}
           {!activeProject && (
