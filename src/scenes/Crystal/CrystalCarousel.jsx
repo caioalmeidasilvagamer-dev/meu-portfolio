@@ -180,32 +180,31 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const handleBackToCarousel = useCallback(() => {
     if (!zoomTriggerRef.current) return;
 
-    // 1. Inicia a saída da câmera imediatamente
-    zoomTriggerRef.current.zoomOut(() => {
-      // setActiveProject(null) é chamado apenas quando a câmera chegou de volta
-      // para evitar o recompile do shader do CrystalMesh no meio da animação
-      setActiveProject(null);
-    });
-
-    // 2. Flash de lente na saída (cosmético, não bloqueia)
     gsap.timeline()
-      .to(lensPassRef.current, { opacity: 0.7, duration: 0.3, delay: 0.05, ease: "power1.in" })
-      .to(lensPassRef.current, { opacity: 0, duration: 0.6, ease: "power1.out" });
+      // 1. Cobre a tela completamente primeiro (esconde o interior antes de qualquer swap)
+      .to(lensPassRef.current, { opacity: 1, duration: 0.3, ease: "power2.in" })
+      // 2. Com a tela coberta: troca o estado + inicia o voo de câmera de volta
+      .call(() => {
+        setActiveProject(null);
+        zoomTriggerRef.current.zoomOut();
+      })
+      // 3. Espera 0.4s (tempo para o shader do CrystalMesh compilar + câmera começar a se mover)
+      // 4. Desfoca gradualmente revelando a câmera já em movimento de volta ao cristal
+      .to(lensPassRef.current, { opacity: 0, duration: 1.1, delay: 0.35, ease: "power2.out" });
   }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#8f97a1", overflow: "hidden" }}>
-      {/* Brilho / Distorção de Refração de Lente na Passagem */}
+      {/* Overlay de Passagem (Refração de Lente) — tom escuro do interior do cristal */}
       <div
         ref={lensPassRef}
         style={{
           position: "fixed",
           inset: 0,
-          background: "radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(143,151,161,0.9) 100%)",
+          background: "#141e28",
           opacity: 0,
           pointerEvents: "none",
           zIndex: 999,
-          backdropFilter: "blur(20px)",
         }}
       />
 
