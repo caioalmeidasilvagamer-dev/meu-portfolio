@@ -159,36 +159,37 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
   const next = useCallback(() => setIndex((i) => Math.min(items.length - 1, i + 1)), [items.length]);
 
-  // Voo Contínuo de Entrada para o Interior do Cristal (Sem Cortes)
+  // Voo Contínuo de Entrada para o Interior do Cristal (Sem Cortes, 60fps)
   const handleEnterProject = useCallback(() => {
     if (!zoomTriggerRef.current || activeProject) return;
 
-    // Flash sutil de refração da lente no momento exato do voo através da casca
-    gsap.timeline()
-      .to(lensPassRef.current, { opacity: 0.8, duration: 0.4, delay: 0.7 })
-      .to(lensPassRef.current, { opacity: 0, duration: 0.6 })
-      .call(
-        () => {
-          setActiveProject(currentItem);
-          if (customOnEnter) customOnEnter(currentItem);
-        },
-        null,
-        0.9
-      );
-
+    // 1. Inicia o voo suave de câmera imediatamente
     zoomTriggerRef.current.zoomIn();
+
+    // 2. Transição de refração de lente sincronizada no ponto de travessia da casca
+    gsap.timeline()
+      .to(lensPassRef.current, { opacity: 0.9, duration: 0.4, delay: 0.65, ease: "power2.in" })
+      .call(() => {
+        setActiveProject(currentItem);
+        if (customOnEnter) customOnEnter(currentItem);
+      })
+      .to(lensPassRef.current, { opacity: 0, duration: 0.55, ease: "power2.out" });
   }, [currentItem, activeProject, customOnEnter]);
 
-  // Retorno da Câmera para Fora do Cristal
+  // Retorno Suave da Câmera para Fora do Cristal
   const handleBackToCarousel = useCallback(() => {
+    if (!zoomTriggerRef.current) return;
+
+    // 1. Inicia a saída da câmera imediatamente
+    zoomTriggerRef.current.zoomOut();
+
+    // 2. Transição de lente na saída
     gsap.timeline()
-      .to(lensPassRef.current, { opacity: 0.7, duration: 0.3 })
+      .to(lensPassRef.current, { opacity: 0.85, duration: 0.35, ease: "power2.in" })
       .call(() => {
         setActiveProject(null);
       })
-      .to(lensPassRef.current, { opacity: 0, duration: 0.5 });
-
-    if (zoomTriggerRef.current) zoomTriggerRef.current.zoomOut();
+      .to(lensPassRef.current, { opacity: 0, duration: 0.5, ease: "power2.out" });
   }, []);
 
   return (

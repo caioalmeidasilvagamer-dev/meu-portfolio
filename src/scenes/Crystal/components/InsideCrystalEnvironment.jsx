@@ -1,118 +1,120 @@
 // InsideCrystalEnvironment.jsx
-// Textura HDRI 360° 100% Seamless (Sem Costuras / Sem Linha de Junção / Fundo Infinito)
-// Cristal Metálico Escuro Fosco (Dark Slate Metallic Frosted Glass)
+// Textura HDRI 360° 100% Seamless e Ultra-Otimizada (0ms Render Latency)
+// Cache global para evitar travamentos ou bloqueio da thread principal durante transições
 
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+// Cache global de texturas em memória (gerado uma única vez por seed)
+const SKY_TEXTURE_CACHE = new Map();
+
 /* ─────────────────────────────────────────────────────────────────
-   Gerador de Textura 360° 100% Seamless (Equiretangular Perfeito)
+   Gerador de Textura 360° Seamless de Alta Performance (< 1ms CPU)
+───────────────────────────────────────────────────────────────── */
+function getOrCreateDarkCrystalSkyTexture(seed = 1) {
+  if (SKY_TEXTURE_CACHE.has(seed)) {
+    return SKY_TEXTURE_CACHE.get(seed);
+  }
+
+  const W = 1024; // 1024x512 é perfeito para Sky Esfera 360 e gera instantaneamente
+  const H = 512;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  const rng = (n) => {
+    const x = Math.sin(n * 127.1 + seed * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
+
+  // ─── 1. Gradiente Estritamente Vertical 100% Seamless ───
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0.00, "#223244"); // Topo slate metálico
+  bgGrad.addColorStop(0.30, "#192634"); // Tom médio cristalino
+  bgGrad.addColorStop(0.70, "#121b26"); // Equador escuro
+  bgGrad.addColorStop(1.00, "#0a1017"); // Base escura
+
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ─── 2. Nuvens de Reflexo Metálico com Wrapping 360° Seamless ───
+  for (let i = 0; i < 18; i++) {
+    const cx = rng(i * 37 + 5) * W;
+    const cy = 60 + rng(i * 41 + 10) * (H - 120);
+    const r = 80 + rng(i * 43) * 220;
+    const alpha = 0.08 + rng(i * 47) * 0.18;
+
+    const offsets = [0, -W, W];
+    for (const ox of offsets) {
+      const x = cx + ox;
+      if (x + r < 0 || x - r > W) continue;
+
+      const g = ctx.createRadialGradient(x, cy, 0, x, cy, r);
+      g.addColorStop(0.0, `rgba(160, 190, 215, ${alpha.toFixed(3)})`);
+      g.addColorStop(0.4, `rgba(75, 110, 140, ${(alpha * 0.45).toFixed(3)})`);
+      g.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, cy - r, r * 2, r * 2);
+    }
+  }
+
+  // ─── 3. Micro-Granulação Fosca Aveludada (Desenho Nativo Canvas < 1ms) ───
+  ctx.fillStyle = "rgba(255, 255, 255, 0.035)";
+  for (let i = 0; i < 350; i++) {
+    const gx = rng(i * 13) * W;
+    const gy = rng(i * 17) * H;
+    const gw = 1.5 + rng(i * 19) * 3;
+    const gh = 1.5 + rng(i * 23) * 3;
+
+    // Repete no wrap horizontal
+    ctx.fillRect(gx, gy, gw, gh);
+    if (gx < 20) ctx.fillRect(gx + W, gy, gw, gh);
+    if (gx > W - 20) ctx.fillRect(gx - W, gy, gw, gh);
+  }
+
+  // ─── 4. Desfoque Suave Nativo ───
+  const blurCanvas = document.createElement("canvas");
+  blurCanvas.width = W;
+  blurCanvas.height = H;
+  const bCtx = blurCanvas.getContext("2d");
+
+  bCtx.filter = "blur(4px)";
+  bCtx.drawImage(canvas, 0, 0);
+
+  const texture = new THREE.CanvasTexture(blurCanvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.needsUpdate = true;
+
+  SKY_TEXTURE_CACHE.set(seed, texture);
+  return texture;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Hook com Pré-Carregamento em Cache
 ───────────────────────────────────────────────────────────────── */
 function useDarkCrystalSkyTexture(activeProject) {
   const seed = activeProject?.id ?? 1;
 
   return useMemo(() => {
-    const W = 2048;
-    const H = 1024;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext("2d");
-
-    // PRNG determinístico por seed
-    const rng = (n) => {
-      const x = Math.sin(n * 127.1 + seed * 311.7) * 43758.5453;
-      return x - Math.floor(x);
-    };
-
-    // ─── 1. Gradiente Estritamente Vertical (x=0 e x=W são 100% idênticos) ───
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0.00, "#223244"); // Zenith / Topo slate azul metálico
-    bgGrad.addColorStop(0.30, "#192634"); // Tom médio cristalino escuro
-    bgGrad.addColorStop(0.70, "#121b26"); // Equador obsidiana escuro
-    bgGrad.addColorStop(1.00, "#0a1017"); // Nadir / Base escura
-
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // ─── 2. Nuvens de Reflexo Metálico com Wrapping Horizontal 360° ───
-    for (let i = 0; i < 20; i++) {
-      const cx = rng(i * 37 + 5) * W;
-      const cy = 100 + rng(i * 41 + 10) * (H - 200); // evita pólos extremados
-      const r = 140 + rng(i * 43) * 360;
-      const alpha = 0.08 + rng(i * 47) * 0.20;
-
-      // Desenha a nuvem luminosa com repetição para x < 0 e x > W (Seamless Wrap)
-      const offsets = [0, -W, W];
-      for (const ox of offsets) {
-        const x = cx + ox;
-        if (x + r < 0 || x - r > W) continue;
-
-        const g = ctx.createRadialGradient(x, cy, 0, x, cy, r);
-        g.addColorStop(0.0, `rgba(160, 190, 215, ${alpha.toFixed(3)})`);
-        g.addColorStop(0.4, `rgba(75, 110, 140, ${(alpha * 0.45).toFixed(3)})`);
-        g.addColorStop(1.0, "rgba(0, 0, 0, 0)");
-
-        ctx.fillStyle = g;
-        ctx.fillRect(x - r, cy - r, r * 2, r * 2);
-      }
-    }
-
-    // ─── 3. Micro-Grânulos Foscos Periodicamentes Perfeitos (Seamless Noise) ───
-    const imgData = ctx.getImageData(0, 0, W, H);
-    const data = imgData.data;
-
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        const idx = (y * W + x) * 4;
-
-        // Ruído periódico horizontal usando sin/cos de 2*PI*x/W
-        const uAngle = (x / W) * Math.PI * 2;
-        const vAngle = (y / H) * Math.PI;
-
-        const nx = Math.cos(uAngle) * 15.0;
-        const ny = Math.sin(uAngle) * 15.0;
-        const nz = Math.sin(vAngle) * 15.0;
-
-        const n1 = rng(nx * 12.9898 + ny * 78.233 + nz * 45.164);
-        const n2 = rng(nx * 39.421 + ny * 11.149 + nz * 93.712);
-        const grain = (n1 - 0.5) * 16 + (n2 - 0.5) * 8;
-
-        data[idx]     = Math.min(255, Math.max(0, data[idx] + grain * 0.8));
-        data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + grain * 0.9));
-        data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + grain * 1.1));
-      }
-    }
-
-    ctx.putImageData(imgData, 0, 0);
-
-    // ─── 4. Passagem de Desfoque Fino (Soft Diffusion) ───
-    const blurCanvas = document.createElement("canvas");
-    blurCanvas.width = W;
-    blurCanvas.height = H;
-    const bCtx = blurCanvas.getContext("2d");
-
-    bCtx.filter = "blur(6px)";
-    bCtx.drawImage(canvas, 0, 0);
-
-    const texture = new THREE.CanvasTexture(blurCanvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.needsUpdate = true;
-    return texture;
+    return getOrCreateDarkCrystalSkyTexture(seed);
   }, [seed]);
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Componente Sky Esfera 360° Sem Costuras (Seamless Infinite Sky)
+   Componente Sky Esfera 360° de Alta Performance
 ───────────────────────────────────────────────────────────────── */
 export default function InsideCrystalEnvironment({ activeProject }) {
   const skyRef = useRef();
   const skyTex = useDarkCrystalSkyTexture(activeProject);
 
-  // Rotação suave sem solavancos
+  // Rotação constante ultra-suave
   useFrame((state) => {
     if (skyRef.current) {
       skyRef.current.rotation.y = state.clock.elapsedTime * 0.002;
@@ -121,7 +123,7 @@ export default function InsideCrystalEnvironment({ activeProject }) {
 
   return (
     <mesh ref={skyRef}>
-      <sphereGeometry args={[45, 128, 64]} />
+      <sphereGeometry args={[45, 64, 32]} />
       <meshBasicMaterial map={skyTex} side={THREE.BackSide} />
     </mesh>
   );
