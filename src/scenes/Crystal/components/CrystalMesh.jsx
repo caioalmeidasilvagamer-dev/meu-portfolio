@@ -11,8 +11,10 @@ import ProjectContent from "./ProjectContent";
 /* ------------------------------------------------------------------ */
 /* 1. Textura de Ruído Suave para Aspecto Fosco (Frosted Surface)     */
 /* ------------------------------------------------------------------ */
+let GLOBAL_NOISE_TEX = null;
 export function useNoiseTexture() {
   return useMemo(() => {
+    if (GLOBAL_NOISE_TEX) return GLOBAL_NOISE_TEX;
     const size = 256;
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
@@ -36,15 +38,15 @@ export function useNoiseTexture() {
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(3, 3);
+    GLOBAL_NOISE_TEX = tex;
     return tex;
   }, []);
 }
 
-/* ------------------------------------------------------------------ */
-/* 2. Geometria Orgânica do Conteúdo Interno                          */
-/* ------------------------------------------------------------------ */
+let GLOBAL_INNER_BLOB_GEO = null;
 export function useInnerBlobGeometry(radius = 1) {
   return useMemo(() => {
+    if (GLOBAL_INNER_BLOB_GEO) return GLOBAL_INNER_BLOB_GEO;
     const geo = new THREE.SphereGeometry(radius, 32, 32);
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
@@ -55,6 +57,7 @@ export function useInnerBlobGeometry(radius = 1) {
       pos.setXYZ(i, v.x, v.y, v.z);
     }
     geo.computeVertexNormals();
+    GLOBAL_INNER_BLOB_GEO = geo;
     return geo;
   }, [radius]);
 }
@@ -166,6 +169,8 @@ export default function CrystalMesh({
   const matCfg = config.material || defaultConfig.material;
   const innerCfg = config.innerBlob || defaultConfig.innerBlob;
 
+  const wasDeformedRef = useRef(false);
+
   useFrame((state) => {
     if (groupRef.current) groupRef.current.rotation.y += 0.003;
 
@@ -179,15 +184,15 @@ export default function CrystalMesh({
     currentActive.current += (targetActive - currentActive.current) * hoverCfg.fadeSpeed;
     const active = currentActive.current;
 
-    // Deformação 3D por onda de mouse compartilhada para qualquer cristal
-    if (animatedGeometry && basePositions && normals) {
+    // Executa a deformação apenas se o hover estiver ativo ou se precisar restaurar a posição base
+    if ((active > 0.001 || wasDeformedRef.current) && animatedGeometry && basePositions && normals) {
       const pos = animatedGeometry.attributes.position.array;
       const count = animatedGeometry.attributes.position.count;
       const mouse = currentMouseLocal.current;
       const time = state.clock.elapsedTime;
       const radius = hoverCfg.radius;
 
-      let isDeformed = false;
+      let currentlyDeformed = false;
 
       for (let i = 0; i < count; i++) {
         const idx = i * 3;
@@ -214,19 +219,18 @@ export default function CrystalMesh({
           pos[idx] = vx + nx * wave;
           pos[idx + 1] = vy + ny * wave;
           pos[idx + 2] = vz + nz * wave;
-          isDeformed = true;
+          currentlyDeformed = true;
         } else if (pos[idx] !== vx || pos[idx + 1] !== vy || pos[idx + 2] !== vz) {
           pos[idx] = vx;
           pos[idx + 1] = vy;
           pos[idx + 2] = vz;
-          isDeformed = true;
         }
       }
 
-      if (isDeformed) {
+      if (currentlyDeformed || wasDeformedRef.current) {
         animatedGeometry.attributes.position.needsUpdate = true;
-        animatedGeometry.computeVertexNormals();
       }
+      wasDeformedRef.current = currentlyDeformed;
     }
   });
 

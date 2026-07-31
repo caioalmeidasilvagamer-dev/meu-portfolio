@@ -27,9 +27,8 @@ export const crystalConfig = {
     clearcoatRoughness: 0.2,
     attenuationColor: "#9ca6b2",
     attenuationDistance: 2.5,
-    color: "#dce2e8",
-    resolution: 512,
-    samples: 6,
+    resolution: 128,
+    samples: 4,
     backside: true,
   },
 
