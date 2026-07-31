@@ -3,11 +3,65 @@
 
 import { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import gsap from "gsap";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
 import { crystalConfig } from "./config/crystalConfig";
+
+/* ------------------------------------------------------------------ */
+/* Loader HUD Glassmorphic de Carregamento Inicial (0ms Feedback)      */
+/* ------------------------------------------------------------------ */
+function CanvasLoader() {
+  const { active, progress } = useProgress();
+  if (!active) return null;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#ffffff",
+        fontFamily: "'Courier New', Courier, monospace",
+        background: "rgba(14, 22, 32, 0.45)",
+        backdropFilter: "blur(8px)",
+        zIndex: 50,
+        pointerEvents: "none",
+      }}
+    >
+      <div style={{ fontSize: "11px", letterSpacing: "3px", opacity: 0.6, marginBottom: "12px" }}>
+        INITIALIZING 3D ENVIRONMENT
+      </div>
+      <div
+        style={{
+          width: "160px",
+          height: "3px",
+          background: "rgba(255, 255, 255, 0.15)",
+          borderRadius: "2px",
+          overflow: "hidden",
+          marginBottom: "10px",
+        }}
+      >
+        <div
+          style={{
+            width: `${progress}%`,
+            height: "100%",
+            background: "#7eb8e0",
+            boxShadow: "0 0 10px #7eb8e0",
+            transition: "width 0.2s ease",
+          }}
+        />
+      </div>
+      <div style={{ fontSize: "12px", letterSpacing: "2px", fontWeight: "bold" }}>
+        {Math.floor(progress)}%
+      </div>
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* 1. Controlador de Câmera & Controls — Transição GSAP Fluida         */
@@ -233,6 +287,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         }}
       />
 
+      {/* Loader HUD de Carregamento Inicial (useProgress) */}
+      <CanvasLoader />
+
       {/* Canvas 3D */}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45, near: 0.1, far: 100 }}
@@ -241,36 +298,46 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           cameraRef.current = camera;
         }}
       >
-        <Suspense fallback={null}>
-          <CameraController
-            activeProject={activeProject}
-            isTransitioning={isTransitioning}
-            controlsRef={controlsRef}
-          />
-          <color attach="background" args={[crystalConfig.environment.backgroundColor]} />
-          <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
-          <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
-          <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
+        {/* Renderiza instantaneamente no frame 1 (0ms de atraso) */}
+        <CameraController
+          activeProject={activeProject}
+          isTransitioning={isTransitioning}
+          controlsRef={controlsRef}
+        />
+        <color attach="background" args={[crystalConfig.environment.backgroundColor]} />
+        <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
+        <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
+        <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
 
+        {/* Partículas e névoa da cena externa */}
+        <group visible={!activeProject}>
+          <fog
+            attach="fog"
+            args={[
+              crystalConfig.environment.fog.color,
+              crystalConfig.environment.fog.near,
+              crystalConfig.environment.fog.far,
+            ]}
+          />
+          <StudioParticles />
+        </group>
+
+        {/* Instância única de OrbitControls — pronta no frame 1 */}
+        <OrbitControls
+          ref={controlsRef}
+          enableZoom={false}
+          enablePan={false}
+          makeDefault
+        />
+
+        {/* Apenas os assets pesados de 3D/Ambiente ficam dentro do Suspense */}
+        <Suspense fallback={null}>
           {/* Ambiente de Estúdio (Lightformers) */}
           <Environment resolution={256}>
             <Lightformer form="rect" intensity={3} color="#ffffff" scale={[6, 3, 1]} position={[4, 5, 4]} target={[0, 0, 0]} />
             <Lightformer form="rect" intensity={1} color="#c8d4dc" scale={[5, 4, 1]} position={[-5, -2, -3]} target={[0, 0, 0]} />
             <Lightformer form="ring" intensity={1.5} color="#ffffff" scale={3} position={[0, 2, -6]} target={[0, 0, 0]} />
           </Environment>
-
-          {/* Partículas e névoa da cena externa */}
-          <group visible={!activeProject}>
-            <fog
-              attach="fog"
-              args={[
-                crystalConfig.environment.fog.color,
-                crystalConfig.environment.fog.near,
-                crystalConfig.environment.fog.far,
-              ]}
-            />
-            <StudioParticles />
-          </group>
 
           {/* Sky 360° interno — visível apenas quando dentro */}
           <group visible={!!activeProject}>
@@ -289,14 +356,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               onClick={handleEnterProject}
             />
           </group>
-
-          {/* Instância única de OrbitControls — evita re-montar event listeners */}
-          <OrbitControls
-            ref={controlsRef}
-            enableZoom={false}
-            enablePan={false}
-            makeDefault
-          />
         </Suspense>
       </Canvas>
 
