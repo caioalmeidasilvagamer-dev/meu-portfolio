@@ -295,19 +295,7 @@ export default function CrystalMesh({
           onPointerLeave={() => {
             isHovering.current = false;
           }}
-        >
-          <meshPhysicalMaterial
-            color="#ffffff"
-            transparent={true}
-            opacity={0.14}
-            roughness={0.02}
-            metalness={0.0}
-            reflectivity={0.9}
-            clearcoat={1.0}
-            clearcoatRoughness={0.05}
-            depthWrite={false}
-            side={THREE.DoubleSide}
-          />
+          <MeshTransmissionMaterial {...matCfg} />
         </mesh>
 
         {/* 3. Fresnel / Rim Light — Bordas de Cristal Branco Reluzente */}

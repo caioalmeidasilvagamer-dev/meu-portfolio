@@ -14,38 +14,38 @@ export const crystalConfig = {
   // Configuração do Material de Transmissão do Cristal (MeshTransmissionMaterial)
   // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
-  // ── Material de Transmissão — Vidro Oco 100% Transparente (Sem Refração Interna) ──
+  // ── Material de Transmissão — Vidro Óptico / Cristal Lapidado PBR ──
   material: {
-    // Transmissão & Refração
-    transmission: 1,            // 100% transparente
-    thickness: 0,               // Oco — zero espessura
-    ior: 1.0,                   // Zero refração (sem distorcer o conteúdo interno)
-    backside: false,            // Sem cálculo de face traseira (transparência pura)
-    backsideThickness: 0,
+    // Transmissão & Refração Física (Snell's Law)
+    transmission: 1,            // 100% de transmissão de luz (transparência óptica)
+    thickness: 0.6,             // Espessura física de casca (desvia a luz suavemente nas bordas)
+    ior: 1.52,                  // Vidro Crown / Cristal de Lapidação (IOR = 1.52)
+    backside: true,             // Refração de dupla passada (entra e sai das facetas)
+    backsideThickness: 0.35,    // Refração traseira calibrada
 
-    // Superfície
-    roughness: 0,               // Perfeitamente liso — vidro limpo
-    clearcoat: 0,
-    clearcoatRoughness: 0,
+    // Superfície & Especularidade
+    roughness: 0.0,             // Zero rugosidade (vidro cristalino perfeitamente polido)
+    clearcoat: 0.5,             // Camada de verniz reluzente para destaques de borda
+    clearcoatRoughness: 0.05,
 
-    // Dispersão & Distorção (Desativados)
-    chromaticAberration: 0,     // Zero dispersão
-    anisotropicBlur: 0,         // Zero blur
+    // Dispersão Prismática & Distorção
+    chromaticAberration: 0.006, // Dispersão cromática sutil nas arestas lapidadas
+    anisotropicBlur: 0,         // Zero blur — visual 100% limpo e nítido
     distortion: 0,
     distortionScale: 0,
     temporalDistortion: 0,
 
-    // Atenuação (Incolor)
+    // Atenuação (100% Incolor e Cristalino)
     attenuationColor: "#ffffff",
-    attenuationDistance: 99,
+    attenuationDistance: 25,
     color: "#ffffff",
 
-    // Reflexões Suaves de Borda
-    envMapIntensity: 0.12,
+    // Destaque de Reflexão das Facetas
+    envMapIntensity: 0.85,      // Reflexões vívidas do ambiente de estúdio
 
-    // Performance
+    // Performance (FBO Render Target)
     resolution: 512,
-    samples: 4,
+    samples: 6,
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)
