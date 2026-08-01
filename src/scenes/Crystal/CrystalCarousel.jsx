@@ -400,7 +400,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           isTransitioning={isTransitioning}
           controlsRef={controlsRef}
         />
-        <ambientLight intensity={0.25} />
+        <ambientLight intensity={0.4} />
 
         {/* Partículas e névoa da cena externa */}
         <group visible={!activeProject}>
@@ -425,20 +425,20 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
         {/* Apenas os assets pesados de 3D/Ambiente ficam dentro do Suspense */}
         <Suspense fallback={null}>
-          {/* Ambiente de Fotografia de Produto — Softboxes + Dark Panel */}
+          {/* Ambiente de Fotografia de Produto — fundo claro para cristal branco-gelo */}
           <Environment resolution={512}>
             <mesh scale={50}>
               <sphereGeometry args={[1, 32, 32]} />
-              <meshBasicMaterial color="#0a0a14" side={THREE.BackSide} />
+              <meshBasicMaterial color="#b8c4d0" side={THREE.BackSide} />
             </mesh>
             {/* Key Softbox — painel branco grande, superior direito */}
             <Lightformer form="rect" intensity={4} color="#ffffff" scale={[8, 4, 1]} position={[4, 5, 3]} target={[0, 0, 0]} />
             {/* Fill Softbox — iluminação suave lateral esquerda */}
             <Lightformer form="rect" intensity={2} color="#e8f0ff" scale={[6, 5, 1]} position={[-5, 2, 2]} target={[0, 0, 0]} />
-            {/* Dark Panel — cria linha de sombra nítida nas arestas */}
-            <Lightformer form="rect" intensity={0} color="#000000" scale={[5, 6, 1]} position={[-4, 0, -2]} target={[0, 0, 0]} />
-            {/* Rim Ring — silhueta traseira reluzente */}
-            <Lightformer form="ring" intensity={2.5} color="#ffffff" scale={3.5} position={[0, 3, -6]} target={[0, 0, 0]} />
+            {/* Dark Panel — cria linha de sombra sutil */}
+            <Lightformer form="rect" intensity={0.3} color="#667788" scale={[5, 6, 1]} position={[-4, 0, -2]} target={[0, 0, 0]} />
+            {/* Rim Ring — silhueta traseira */}
+            <Lightformer form="ring" intensity={2} color="#ffffff" scale={3.5} position={[0, 3, -6]} target={[0, 0, 0]} />
           </Environment>
 
           {/* Sky 360° interno — visível apenas quando dentro */}
