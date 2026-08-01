@@ -14,25 +14,38 @@ export const crystalConfig = {
   // Configuração do Material de Transmissão do Cristal (MeshTransmissionMaterial)
   // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
+  // ── Material de Transmissão — Vidro Oco 100% Transparente (Sem Refração Interna) ──
   material: {
-    transmission: 1,
-    thickness: 0.8,
-    roughness: 0.02,
-    ior: 1.544,
-    chromaticAberration: 0.03,
-    anisotropicBlur: 0.1,
-    distortion: 0.0,
-    distortionScale: 0.0,
+    // Transmissão & Refração
+    transmission: 1,            // 100% transparente
+    thickness: 0,               // Oco — zero espessura
+    ior: 1.0,                   // Zero refração (sem distorcer o conteúdo interno)
+    backside: false,            // Sem cálculo de face traseira (transparência pura)
+    backsideThickness: 0,
+
+    // Superfície
+    roughness: 0,               // Perfeitamente liso — vidro limpo
+    clearcoat: 0,
+    clearcoatRoughness: 0,
+
+    // Dispersão & Distorção (Desativados)
+    chromaticAberration: 0,     // Zero dispersão
+    anisotropicBlur: 0,         // Zero blur
+    distortion: 0,
+    distortionScale: 0,
     temporalDistortion: 0,
-    normalScale: new THREE.Vector2(0.05, 0.05),
-    clearcoat: 0.3,
-    clearcoatRoughness: 0.1,
-    attenuationColor: "#f4f8ff",
-    attenuationDistance: 2.0,
-    resolution: 1024,
-    samples: 10,
-    backside: true,
-    side: THREE.DoubleSide,
+
+    // Atenuação (Incolor)
+    attenuationColor: "#ffffff",
+    attenuationDistance: 99,
+    color: "#ffffff",
+
+    // Reflexões Suaves de Borda
+    envMapIntensity: 0.12,
+
+    // Performance
+    resolution: 512,
+    samples: 4,
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)

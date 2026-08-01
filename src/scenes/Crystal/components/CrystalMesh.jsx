@@ -270,33 +270,8 @@ export default function CrystalMesh({
               innerScale={projectData?.innerScale || 0.55}
               themeColor={projectData?.themeColor || "#a6cced"}
             />
-
-            {/* Glow blob de fundo suave */}
-            <mesh geometry={innerGeometry} renderOrder={-1} scale={0.6}>
-              <meshStandardMaterial {...innerCfg.material} />
-            </mesh>
           </group>
         )}
-
-        {/* 1b. Fraturas/Inclusões Internas — Veios brancos como quartzo natural */}
-        {fractures.map((f, i) => (
-          <mesh
-            key={`frac-${i}`}
-            position={f.position}
-            rotation={f.rotation}
-            scale={f.scale}
-          >
-            <planeGeometry args={[1, 1]} />
-            <meshStandardMaterial
-              color="#ffffff"
-              transparent
-              opacity={f.opacity}
-              side={THREE.DoubleSide}
-              depthWrite={false}
-              blending={THREE.NormalBlending}
-            />
-          </mesh>
-        ))}
 
         {/* 2. Cristal Principal — Casca de Gelo/Quartzo Translúcida e Fosca */}
         <mesh
