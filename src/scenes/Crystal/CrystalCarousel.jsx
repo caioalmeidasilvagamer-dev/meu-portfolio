@@ -5,6 +5,7 @@ import { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import gsap from "gsap";
+import * as THREE from "three";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
 import LavaBackground from "./components/LavaBackground";
@@ -406,6 +407,10 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         <Suspense fallback={null}>
           {/* Ambiente de Estúdio (Lightformers) */}
           <Environment resolution={256}>
+            <mesh scale={50}>
+              <sphereGeometry args={[1, 32, 32]} />
+              <meshBasicMaterial color="#aab2bd" side={THREE.BackSide} />
+            </mesh>
             <Lightformer form="rect" intensity={3} color="#ffffff" scale={[6, 3, 1]} position={[4, 5, 4]} target={[0, 0, 0]} />
             <Lightformer form="rect" intensity={1} color="#c8d4dc" scale={[5, 4, 1]} position={[-5, -2, -3]} target={[0, 0, 0]} />
             <Lightformer form="ring" intensity={1.5} color="#ffffff" scale={3} position={[0, 2, -6]} target={[0, 0, 0]} />

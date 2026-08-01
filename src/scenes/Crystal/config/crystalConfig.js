@@ -25,7 +25,7 @@ export const crystalConfig = {
     distortionScale: 0.05,
     temporalDistortion: 0,
     normalScale: new THREE.Vector2(0.15, 0.15),
-    clearcoat: 0.6,
+    clearcoat: 0.25,
     clearcoatRoughness: 0.1,
     attenuationColor: "#e8f2ff",
     attenuationDistance: 6,
