@@ -170,14 +170,14 @@ export default function CrystalMesh({
 
   const wasDeformedRef = useRef(false);
 
-  // Centralizar cristal: calcula offset Y do centro da bounding box * escala do mesh
+  // Centralizar cristal: calcula offset Y do centro da bounding box
   const centerY = useMemo(() => {
     if (!baseGeometry) return 0;
     baseGeometry.computeBoundingBox();
     const center = new THREE.Vector3();
     baseGeometry.boundingBox.getCenter(center);
-    return -center.y * transformScale;
-  }, [baseGeometry, transformScale]);
+    return -center.y;
+  }, [baseGeometry]);
 
   // eslint-disable-next-line react-hooks/immutability -- Three.js geometry buffer mutation is intentional & performant
   useFrame((state) => {
