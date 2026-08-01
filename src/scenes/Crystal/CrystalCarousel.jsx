@@ -148,6 +148,7 @@ function CameraController({ activeProject, isTransitioning, controlsRef }) {
       controls.maxPolarAngle = Math.PI / 2;
       controls.rotateSpeed = 0.8;
       controls.target.set(0, 0, 0);
+      controls.update();
     }
   }, [activeProject, isTransitioning, controlsRef]);
 
@@ -294,7 +295,11 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
     setIsTransitioning(true);
     const camera = cameraRef.current;
     const controls = controlsRef.current;
-    if (controls) controls.enabled = false;
+    if (controls) {
+      controls.enabled = false;
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -309,16 +314,24 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       ease: "power2.in",
     }, 0);
 
-    // 2. Troca de estado visual de 3D e reseta posição da câmera
+    // 2. Troca de estado visual de 3D
     tl.call(() => {
       setActiveProject(null);
     }, null, 0.35);
 
-    // 3. Voo da câmera para fora
+    // 3. Voo da câmera para fora — reseta posição e rotação
     tl.to(camera.position, {
       x: 0,
       y: 0,
       z: 5,
+      duration: 1.4,
+      ease: "power2.inOut",
+    }, 0.35);
+
+    tl.to(camera.rotation, {
+      x: 0,
+      y: 0,
+      z: 0,
       duration: 1.4,
       ease: "power2.inOut",
     }, 0.35);
@@ -330,6 +343,15 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       ease: "power2.inOut",
       onUpdate: () => camera.updateProjectionMatrix(),
     }, 0.35);
+
+    // 4. Reativa controls com estado limpo
+    tl.call(() => {
+      if (controls) {
+        controls.target.set(0, 0, 0);
+        controls.enabled = true;
+        controls.update();
+      }
+    }, null, 1.8);
 
     tl.to(lensPassRef.current, {
       opacity: 0,
