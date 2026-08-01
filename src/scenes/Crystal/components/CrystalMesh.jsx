@@ -9,40 +9,8 @@ import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 import ProjectContent from "./ProjectContent";
 
 /* ------------------------------------------------------------------ */
-/* 1. Textura de Ruído Suave para Facetas de Gelo (Ice Surface)       */
+/* 1. Hook principal do componente                                     */
 /* ------------------------------------------------------------------ */
-let GLOBAL_NOISE_TEX = null;
-function useNoiseTexture() {
-  return useMemo(() => {
-    if (GLOBAL_NOISE_TEX) return GLOBAL_NOISE_TEX;
-    const size = 256;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext("2d");
-
-    const smallSize = 32;
-    const small = document.createElement("canvas");
-    small.width = small.height = smallSize;
-    const sctx = small.getContext("2d");
-    const imgData = sctx.createImageData(smallSize, smallSize);
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      const v = 128 + (Math.sin(i * 12.9898) * 43758.5453 % 1 - 0.5) * 40;
-      imgData.data[i] = imgData.data[i + 1] = v;
-      imgData.data[i + 2] = 255;
-      imgData.data[i + 3] = 255;
-    }
-    sctx.putImageData(imgData, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(small, 0, 0, size, size);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(3, 3);
-    // eslint-disable-next-line react-hooks/globals -- intentional global cache for texture reuse
-    GLOBAL_NOISE_TEX = tex;
-    return tex;
-  }, []);
-}
 
 let GLOBAL_INNER_BLOB_GEO = null;
 function useInnerBlobGeometry(radius = 1) {
@@ -162,7 +130,6 @@ export default function CrystalMesh({
   }, [seed]);
 
   const innerGeometry = useInnerBlobGeometry();
-  const noiseMap = useNoiseTexture();
 
   const hoverCfg = config.hoverEffect || defaultConfig.hoverEffect;
   const matCfg = config.material || defaultConfig.material;
@@ -178,6 +145,46 @@ export default function CrystalMesh({
     baseGeometry.boundingBox.getCenter(center);
     return -center.y;
   }, [baseGeometry]);
+
+  // Fraturas internas — veios brancos sparse e direcionais como quartzo natural
+  const fractures = useMemo(() => {
+    if (!baseGeometry) return [];
+    baseGeometry.computeBoundingBox();
+    const bb = baseGeometry.boundingBox;
+    const cx = (bb.max.x + bb.min.x) / 2;
+    const cy = (bb.max.y + bb.min.y) / 2;
+    const cz = (bb.max.z + bb.min.z) / 2;
+    const sx = (bb.max.x - bb.min.x) * 0.4;
+    const sy = (bb.max.y - bb.min.y) * 0.35;
+    const sz = (bb.max.z - bb.min.z) * 0.4;
+
+    const r = (i) => {
+      const x = Math.sin((seed + i) * 12.9898 + 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    };
+
+    const count = 6;
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      const angle = r(i * 10) * Math.PI * 2;
+      const tilt = (r(i * 20) - 0.5) * 0.8;
+      result.push({
+        position: [
+          cx + (r(i * 30) - 0.5) * sx,
+          cy + (r(i * 40) - 0.5) * sy,
+          cz + (r(i * 50) - 0.5) * sz,
+        ],
+        rotation: [tilt, angle, r(i * 60) * 0.3],
+        scale: [
+          0.3 + r(i * 70) * 0.6,
+          0.15 + r(i * 80) * 0.35,
+          1,
+        ],
+        opacity: 0.08 + r(i * 90) * 0.12,
+      });
+    }
+    return result;
+  }, [baseGeometry, seed]);
 
   // eslint-disable-next-line react-hooks/immutability -- Three.js geometry buffer mutation is intentional & performant
   useFrame((state) => {
@@ -271,6 +278,26 @@ export default function CrystalMesh({
           </group>
         )}
 
+        {/* 1b. Fraturas/Inclusões Internas — Veios brancos como quartzo natural */}
+        {fractures.map((f, i) => (
+          <mesh
+            key={`frac-${i}`}
+            position={f.position}
+            rotation={f.rotation}
+            scale={f.scale}
+          >
+            <planeGeometry args={[1, 1]} />
+            <meshStandardMaterial
+              color="#ffffff"
+              transparent
+              opacity={f.opacity}
+              side={THREE.DoubleSide}
+              depthWrite={false}
+              blending={THREE.NormalBlending}
+            />
+          </mesh>
+        ))}
+
         {/* 2. Cristal Principal — Casca de Gelo/Quartzo Translúcida e Fosca */}
         <mesh
           ref={mainMeshRef}
@@ -294,7 +321,7 @@ export default function CrystalMesh({
             isHovering.current = false;
           }}
         >
-          <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} background={new THREE.Color("#8f97a1")} />
+          <MeshTransmissionMaterial {...matCfg} />
         </mesh>
 
         {/* Wireframe removido */}
