@@ -17,7 +17,7 @@ export const crystalConfig = {
   material: {
     transmission: 0.95,
     roughness: 0.05,
-    thickness: 2.0,
+    thickness: 1.5,
     ior: 1.45,
     chromaticAberration: 0.0,
     anisotropy: 0.0,
@@ -27,12 +27,12 @@ export const crystalConfig = {
     normalScale: new THREE.Vector2(0.0, 0.0),
     clearcoat: 1.0,
     clearcoatRoughness: 0.05,
-    attenuationColor: "#a0c8f0",
-    attenuationDistance: 1.5,
+    attenuationColor: "#e0ecf8",
+    attenuationDistance: 2.5,
     resolution: 128,
     samples: 4,
     backside: true,
-    color: "#c8e0ff",
+    color: "#f0f4ff",
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)

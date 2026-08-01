@@ -33,9 +33,9 @@ function useInnerBlobGeometry(radius = 1) {
 /* ------------------------------------------------------------------ */
 const FresnelRimShader = {
   uniforms: {
-    uColor: { value: new THREE.Color("#d0e8ff") },
+    uColor: { value: new THREE.Color("#e8f0ff") },
     uPower: { value: 3.0 },
-    uIntensity: { value: 0.5 },
+    uIntensity: { value: 0.4 },
   },
   vertexShader: `
     varying vec3 vNormal;
