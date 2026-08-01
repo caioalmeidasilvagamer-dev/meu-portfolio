@@ -294,7 +294,7 @@ export default function CrystalMesh({
             isHovering.current = false;
           }}
         >
-          <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} />
+          <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} background={new THREE.Color("#8f97a1")} />
         </mesh>
 
         {/* Wireframe removido */}
