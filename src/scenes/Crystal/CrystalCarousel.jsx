@@ -3,7 +3,7 @@
 
 import { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls, useProgress } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import gsap from "gsap";
 import * as THREE from "three";
 import CrystalMesh from "./components/CrystalMesh";
@@ -424,9 +424,10 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             <InsideCrystalEnvironment activeProject={activeProject || currentItem} />
           </group>
 
-          {/* Modelo 3D do cristal — geometria procedural */}
+          {/* Modelo 3D do cristal — mantido montado no Canvas para manter os shaders quentes no WebGL */}
           <group key={index} visible={!activeProject} scale={[mobileScale, mobileScale, mobileScale]}>
             <CrystalMesh
+              modelPath={currentItem.modelPath || crystalConfig.defaultModel}
               projectData={currentItem}
               seed={index + 1}
               label={currentItem.label}
@@ -639,3 +640,5 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
     </div>
   );
 }
+
+useGLTF.preload(crystalConfig.defaultModel);
