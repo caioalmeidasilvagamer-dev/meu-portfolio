@@ -378,7 +378,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           isTransitioning={isTransitioning}
           controlsRef={controlsRef}
         />
-        <ambientLight intensity={0.1} />
+        <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
+        <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
+        <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
 
         {/* Partículas e névoa da cena externa */}
         <group visible={!activeProject}>
