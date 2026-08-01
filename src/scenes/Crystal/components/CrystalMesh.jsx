@@ -1,17 +1,17 @@
 // CrystalMesh.jsx
-// Componente 3D modular reutilizável para qualquer modelo de cristal (.glb)
+// Componente 3D modular — cristal mineral procedural com material de vidro premium
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
+import { MeshTransmissionMaterial, Float } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 import ProjectContent from "./ProjectContent";
+import { getCrystalGeometry } from "./CrystalGeometry";
 
 /* ------------------------------------------------------------------ */
-/* 1. Hook principal do componente                                     */
+/* 1. Blob interno de glow suave                                       */
 /* ------------------------------------------------------------------ */
-
 let GLOBAL_INNER_BLOB_GEO = null;
 function useInnerBlobGeometry(radius = 1) {
   return useMemo(() => {
@@ -26,20 +26,20 @@ function useInnerBlobGeometry(radius = 1) {
       pos.setXYZ(i, v.x, v.y, v.z);
     }
     geo.computeVertexNormals();
-    // eslint-disable-next-line react-hooks/globals -- intentional global cache for geometry reuse
+    // eslint-disable-next-line react-hooks/globals -- intentional global cache
     GLOBAL_INNER_BLOB_GEO = geo;
     return geo;
   }, [radius]);
 }
 
 /* ------------------------------------------------------------------ */
-/* 3. Shader de Fresnel / Rim Light para Bordas Reluzentes            */
+/* 2. Fresnel / Rim Light — bordas elegantes, não fantasma             */
 /* ------------------------------------------------------------------ */
 const FresnelRimShader = {
   uniforms: {
     uColor: { value: new THREE.Color("#ffffff") },
-    uPower: { value: 2.2 },
-    uIntensity: { value: 0.85 },
+    uPower: { value: 3.8 },
+    uIntensity: { value: 0.3 },
   },
   vertexShader: `
     varying vec3 vNormal;
@@ -70,10 +70,9 @@ const FresnelRimShader = {
 };
 
 /* ------------------------------------------------------------------ */
-/* 4. Componente de Cristal Modular 3D                                 */
+/* 3. Componente de Cristal Modular 3D                                 */
 /* ------------------------------------------------------------------ */
 export default function CrystalMesh({
-  modelPath = defaultConfig.defaultModel,
   projectData = null,
   seed = 1,
   config = defaultConfig,
@@ -88,33 +87,21 @@ export default function CrystalMesh({
   const isHovering = useRef(false);
   const currentActive = useRef(0.0);
 
-  // Carrega qualquer modelo .glb dinamicamente
-  const { nodes } = useGLTF(modelPath);
-
-
-  // Extrai a geometria base de forma robusta
+  // Geometria procedural do cristal — facetas grandes, flat shading
   const baseGeometry = useMemo(() => {
-    if (!nodes) return null;
-    return (
-      nodes.Mesh1?.geometry ||
-      nodes.geometry_0?.geometry ||
-      Object.values(nodes).find((n) => n?.geometry)?.geometry
-    );
-  }, [nodes]);
+    return getCrystalGeometry({ facets: 6, height: 2.2, radius: 0.9, tipRatio: 0.35 });
+  }, []);
 
-  // Clonar a geometria para deformar vértices em tempo real
+  // Clonar para deformar vértices em tempo real
   const animatedGeometry = useMemo(() => {
-    if (!baseGeometry) return null;
     return baseGeometry.clone();
   }, [baseGeometry]);
 
   const basePositions = useMemo(() => {
-    if (!baseGeometry) return null;
     return baseGeometry.attributes.position.array.slice();
   }, [baseGeometry]);
 
   const normals = useMemo(() => {
-    if (!baseGeometry) return null;
     return baseGeometry.attributes.normal.array;
   }, [baseGeometry]);
 
@@ -124,8 +111,8 @@ export default function CrystalMesh({
       return (x - Math.floor(x)) * 2 - 1;
     };
     return {
-      transformRotation: [rand(1) * 0.2, rand(2) * Math.PI, rand(3) * 0.2],
-      transformScale: 2.0 + rand(4) * 0.12,
+      transformRotation: [rand(1) * 0.15, rand(2) * Math.PI, rand(3) * 0.15],
+      transformScale: 1.0 + rand(4) * 0.08,
     };
   }, [seed]);
 
@@ -137,56 +124,15 @@ export default function CrystalMesh({
 
   const wasDeformedRef = useRef(false);
 
-  // Centralizar cristal: calcula offset Y do centro da bounding box
+  // Centralizar cristal
   const centerY = useMemo(() => {
-    if (!baseGeometry) return 0;
     baseGeometry.computeBoundingBox();
     const center = new THREE.Vector3();
     baseGeometry.boundingBox.getCenter(center);
     return -center.y;
   }, [baseGeometry]);
 
-  // Fraturas internas — veios brancos sparse e direcionais como quartzo natural
-  const fractures = useMemo(() => {
-    if (!baseGeometry) return [];
-    baseGeometry.computeBoundingBox();
-    const bb = baseGeometry.boundingBox;
-    const cx = (bb.max.x + bb.min.x) / 2;
-    const cy = (bb.max.y + bb.min.y) / 2;
-    const cz = (bb.max.z + bb.min.z) / 2;
-    const sx = (bb.max.x - bb.min.x) * 0.4;
-    const sy = (bb.max.y - bb.min.y) * 0.35;
-    const sz = (bb.max.z - bb.min.z) * 0.4;
-
-    const r = (i) => {
-      const x = Math.sin((seed + i) * 12.9898 + 78.233) * 43758.5453;
-      return x - Math.floor(x);
-    };
-
-    const count = 6;
-    const result = [];
-    for (let i = 0; i < count; i++) {
-      const angle = r(i * 10) * Math.PI * 2;
-      const tilt = (r(i * 20) - 0.5) * 0.8;
-      result.push({
-        position: [
-          cx + (r(i * 30) - 0.5) * sx,
-          cy + (r(i * 40) - 0.5) * sy,
-          cz + (r(i * 50) - 0.5) * sz,
-        ],
-        rotation: [tilt, angle, r(i * 60) * 0.3],
-        scale: [
-          0.3 + r(i * 70) * 0.6,
-          0.15 + r(i * 80) * 0.35,
-          1,
-        ],
-        opacity: 0.08 + r(i * 90) * 0.12,
-      });
-    }
-    return result;
-  }, [baseGeometry, seed]);
-
-  // eslint-disable-next-line react-hooks/immutability -- Three.js geometry buffer mutation is intentional & performant
+  // eslint-disable-next-line react-hooks/immutability -- Three.js geometry buffer mutation
   useFrame((state) => {
     if (groupRef.current) groupRef.current.rotation.y += 0.003;
 
@@ -200,7 +146,7 @@ export default function CrystalMesh({
     currentActive.current += (targetActive - currentActive.current) * hoverCfg.fadeSpeed;
     const active = currentActive.current;
 
-    // Executa a deformação apenas se o hover estiver ativo ou se precisar restaurar a posição base
+    // Deformação hover
     if ((active > 0.001 || wasDeformedRef.current) && animatedGeometry && basePositions && normals) {
       const pos = animatedGeometry.attributes.position.array;
       const count = animatedGeometry.attributes.position.count;
@@ -255,28 +201,30 @@ export default function CrystalMesh({
     <group position={[0, centerY, 0]}>
       <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
-        {/* 1. Conteúdo Interno do Cristal — Objeto do Projeto Aprisionado */}
-        {baseGeometry && (
-          <group
-            ref={innerGroupRef}
-            scale={transformScale * innerCfg.scaleFactor}
-            rotation={transformRotation}
-            renderOrder={-1}
-            visible={true}
-          >
-            {/* ProjectContent usa GLB do projeto ou fallback geométrico */}
-            <ProjectContent
-              innerModel={projectData?.innerModel || null}
-              innerScale={projectData?.innerScale || 0.55}
-              themeColor={projectData?.themeColor || "#a6cced"}
-            />
-          </group>
-        )}
+        {/* 1. Conteúdo Interno — Objeto do Projeto */}
+        <group
+          ref={innerGroupRef}
+          scale={transformScale * innerCfg.scaleFactor}
+          rotation={transformRotation}
+          renderOrder={-1}
+          visible={true}
+        >
+          <ProjectContent
+            innerModel={projectData?.innerModel || null}
+            innerScale={projectData?.innerScale || 0.55}
+            themeColor={projectData?.themeColor || "#a6cced"}
+          />
 
-        {/* 2. Cristal Principal — Casca de Vidro Óptico / Lapidado PBR */}
+          {/* Glow blob de fundo suave */}
+          <mesh geometry={innerGeometry} renderOrder={-1} scale={0.6}>
+            <meshStandardMaterial {...innerCfg.material} />
+          </mesh>
+        </group>
+
+        {/* 2. Cristal Principal — Casca de Vidro Premium */}
         <mesh
           ref={mainMeshRef}
-          geometry={animatedGeometry || baseGeometry}
+          geometry={animatedGeometry}
           scale={transformScale}
           rotation={transformRotation}
           onClick={(e) => {
@@ -299,24 +247,22 @@ export default function CrystalMesh({
           <MeshTransmissionMaterial {...matCfg} />
         </mesh>
 
-        {/* 3. Fresnel / Rim Light — Bordas de Cristal Branco Reluzente */}
-        {baseGeometry && (
-          <mesh
-            geometry={animatedGeometry || baseGeometry}
-            scale={transformScale * 1.005}
-            rotation={transformRotation}
-            renderOrder={10}
-          >
-            <shaderMaterial
-              vertexShader={FresnelRimShader.vertexShader}
-              fragmentShader={FresnelRimShader.fragmentShader}
-              uniforms={FresnelRimShader.uniforms}
-              transparent={true}
-              blending={THREE.AdditiveBlending}
-              depthWrite={false}
-            />
-          </mesh>
-        )}
+        {/* 3. Fresnel / Rim Light — Bordas sutis */}
+        <mesh
+          geometry={animatedGeometry}
+          scale={transformScale * 1.005}
+          rotation={transformRotation}
+          renderOrder={10}
+        >
+          <shaderMaterial
+            vertexShader={FresnelRimShader.vertexShader}
+            fragmentShader={FresnelRimShader.fragmentShader}
+            uniforms={FresnelRimShader.uniforms}
+            transparent={true}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
 
       </group>
       </Float>

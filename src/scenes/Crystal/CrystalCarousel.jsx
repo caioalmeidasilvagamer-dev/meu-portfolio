@@ -3,7 +3,7 @@
 
 import { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, OrbitControls, useProgress } from "@react-three/drei";
 import gsap from "gsap";
 import * as THREE from "three";
 import CrystalMesh from "./components/CrystalMesh";
@@ -378,9 +378,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           isTransitioning={isTransitioning}
           controlsRef={controlsRef}
         />
-        <ambientLight intensity={crystalConfig.environment.ambientLightIntensity} />
-        <pointLight position={[0, -2, 2]} intensity={0.7} color="#A0A5B1" />
-        <pointLight position={[0, 0, -2.5]} intensity={0.9} color="#ffffff" />
+        <ambientLight intensity={0.25} />
 
         {/* Partículas e névoa da cena externa */}
         <group visible={!activeProject}>
@@ -405,22 +403,20 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
         {/* Apenas os assets pesados de 3D/Ambiente ficam dentro do Suspense */}
         <Suspense fallback={null}>
-          {/* Ambiente de Estúdio de Alta Precisão (Fotografia de Produto: Softboxes + Dark Flags) */}
-          <Environment resolution={256}>
+          {/* Ambiente de Fotografia de Produto — Softboxes + Dark Panel */}
+          <Environment resolution={512}>
             <mesh scale={50}>
               <sphereGeometry args={[1, 32, 32]} />
-              <meshBasicMaterial color="#141a22" side={THREE.BackSide} />
+              <meshBasicMaterial color="#0a0a14" side={THREE.BackSide} />
             </mesh>
-            {/* Key Softbox — painel emissivo superior brilhante */}
-            <Lightformer form="rect" intensity={3.5} color="#ffffff" scale={[10, 5, 1]} position={[4, 5, 3]} target={[0, 0, 0]} />
-            {/* Fill Softbox — iluminação suave lateral */}
-            <Lightformer form="rect" intensity={2.0} color="#e8f0ff" scale={[8, 6, 1]} position={[-5, 2, 2]} target={[0, 0, 0]} />
-            {/* Dark Flag Esquerda — cria linha de sombra nítida nas arestas */}
-            <Lightformer form="rect" intensity={0} color="#000000" scale={[6, 8, 1]} position={[-4, 0, -2]} target={[0, 0, 0]} />
-            {/* Dark Flag Direita — contraste geométrico de facetas */}
-            <Lightformer form="rect" intensity={0} color="#000000" scale={[6, 8, 1]} position={[4, 0, -2]} target={[0, 0, 0]} />
+            {/* Key Softbox — painel branco grande, superior direito */}
+            <Lightformer form="rect" intensity={4} color="#ffffff" scale={[8, 4, 1]} position={[4, 5, 3]} target={[0, 0, 0]} />
+            {/* Fill Softbox — iluminação suave lateral esquerda */}
+            <Lightformer form="rect" intensity={2} color="#e8f0ff" scale={[6, 5, 1]} position={[-5, 2, 2]} target={[0, 0, 0]} />
+            {/* Dark Panel — cria linha de sombra nítida nas arestas */}
+            <Lightformer form="rect" intensity={0} color="#000000" scale={[5, 6, 1]} position={[-4, 0, -2]} target={[0, 0, 0]} />
             {/* Rim Ring — silhueta traseira reluzente */}
-            <Lightformer form="ring" intensity={2.5} color="#ffffff" scale={4} position={[0, 3, -6]} target={[0, 0, 0]} />
+            <Lightformer form="ring" intensity={2.5} color="#ffffff" scale={3.5} position={[0, 3, -6]} target={[0, 0, 0]} />
           </Environment>
 
           {/* Sky 360° interno — visível apenas quando dentro */}
@@ -428,10 +424,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             <InsideCrystalEnvironment activeProject={activeProject || currentItem} />
           </group>
 
-          {/* Modelo 3D do cristal — mantido montado no Canvas para manter os shaders quentes no WebGL */}
+          {/* Modelo 3D do cristal — geometria procedural */}
           <group key={index} visible={!activeProject} scale={[mobileScale, mobileScale, mobileScale]}>
             <CrystalMesh
-              modelPath={currentItem.modelPath || crystalConfig.defaultModel}
               projectData={currentItem}
               seed={index + 1}
               label={currentItem.label}
@@ -644,5 +639,3 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
     </div>
   );
 }
-
-useGLTF.preload(crystalConfig.defaultModel);

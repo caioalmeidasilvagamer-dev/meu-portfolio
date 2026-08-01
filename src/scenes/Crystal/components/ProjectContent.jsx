@@ -18,13 +18,13 @@ function FallbackShape({ themeColor }) {
   return (
     <Float speed={1.5} rotationIntensity={0.35} floatIntensity={0.3}>
       <mesh>
-        <octahedronGeometry args={[0.55, 0]} />
+        <icosahedronGeometry args={[0.55, 0]} />
         <meshStandardMaterial
           color={themeColor}
-          roughness={0.18}
-          metalness={0.65}
+          roughness={0.35}
+          metalness={0.15}
           emissive={themeColor}
-          emissiveIntensity={0.45}
+          emissiveIntensity={0.7}
         />
       </mesh>
     </Float>
@@ -70,7 +70,7 @@ export default function ProjectContent({
       )}
 
       {/* ── Partículas temáticas ── */}
-      <Sparkles count={32} scale={[2, 2, 2]} size={2.2} speed={0.45} opacity={0.6} color={themeColor} />
+      <Sparkles count={16} scale={[2, 2, 2]} size={2.2} speed={0.45} opacity={0.6} color={themeColor} />
 
       {/* ── Luz interna temática ── */}
       <pointLight position={[0, 0.2, 0]} intensity={2.5} color={themeColor} distance={4} />

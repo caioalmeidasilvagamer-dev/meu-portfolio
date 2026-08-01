@@ -1,5 +1,4 @@
 // src/scenes/Crystal/config/crystalConfig.js
-import * as THREE from "three";
 
 /**
  * Configuração Global para todos os Modelos de Cristais do Site.
@@ -14,38 +13,38 @@ export const crystalConfig = {
   // Configuração do Material de Transmissão do Cristal (MeshTransmissionMaterial)
   // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
-  // ── Material de Transmissão — Vidro Óptico Ultra-Leve (Refração Mínima Sutil) ──
+  // ── Material de Transmissão — Vidro Óptico Premium (Fotografia de Produto) ──
   material: {
-    // Transmissão & Refração Física Sutil
-    transmission: 1,            // 100% transparente
-    thickness: 0.1,             // Espessura ultra-fina (mínimo desvio óptico)
-    ior: 1.05,                  // Refração o mais fraca possível (IOR = 1.05, sem distorcer o interior)
-    backside: true,             // Mantém dupla reflexão interna
-    backsideThickness: 0.05,
+    // Transmissão & Refração Física
+    transmission: 1,
+    thickness: 1.8,
+    ior: 1.52,
+    backside: true,
+    backsideThickness: 1.8,
 
     // Superfície & Especularidade
-    roughness: 0.0,             // Zero rugosidade (vidro cristalino perfeitamente polido)
-    clearcoat: 0.4,             // Highlights sutis de borda
-    clearcoatRoughness: 0.05,
+    roughness: 0.0,
+    clearcoat: 0.1,
+    clearcoatRoughness: 0.1,
 
     // Dispersão Prismática Sutil
-    chromaticAberration: 0.002, // Dispersão mínima nas arestas
+    chromaticAberration: 0.005,
     anisotropicBlur: 0,
     distortion: 0,
     distortionScale: 0,
     temporalDistortion: 0,
 
-    // Atenuação (Incolor)
+    // Atenuação (Incolor — corpo limpo, não leitoso)
     attenuationColor: "#ffffff",
-    attenuationDistance: 50,
+    attenuationDistance: 12,
     color: "#ffffff",
 
-    // Destaque de Reflexão das Facetas
-    envMapIntensity: 0.7,
+    // Reflexos — suficientes para revelar facetas
+    envMapIntensity: 1.3,
 
     // Performance
-    resolution: 512,
-    samples: 6,
+    resolution: 1024,
+    samples: 8,
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)
