@@ -15,10 +15,10 @@ export const crystalConfig = {
   // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
   material: {
-    transmission: 1.0,
-    roughness: 0.02,
-    thickness: 0.8,
-    ior: 1.31,
+    transmission: 0.95,
+    roughness: 0.05,
+    thickness: 2.0,
+    ior: 1.45,
     chromaticAberration: 0.0,
     anisotropy: 0.0,
     distortion: 0.0,
@@ -27,11 +27,12 @@ export const crystalConfig = {
     normalScale: new THREE.Vector2(0.0, 0.0),
     clearcoat: 1.0,
     clearcoatRoughness: 0.05,
-    attenuationColor: "#e8f0f8",
-    attenuationDistance: 4.0,
+    attenuationColor: "#a0c8f0",
+    attenuationDistance: 1.5,
     resolution: 128,
     samples: 4,
     backside: true,
+    color: "#c8e0ff",
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)
