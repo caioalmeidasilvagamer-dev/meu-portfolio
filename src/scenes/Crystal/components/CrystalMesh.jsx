@@ -273,7 +273,7 @@ export default function CrystalMesh({
           </group>
         )}
 
-        {/* 2. Cristal Principal — Casca de Vidro Isolda 100% Transparente (Sem Escurecimento) */}
+        {/* 2. Cristal Principal — Casca de Vidro Óptico / Lapidado PBR */}
         <mesh
           ref={mainMeshRef}
           geometry={animatedGeometry || baseGeometry}
@@ -295,6 +295,7 @@ export default function CrystalMesh({
           onPointerLeave={() => {
             isHovering.current = false;
           }}
+        >
           <MeshTransmissionMaterial {...matCfg} />
         </mesh>
 
@@ -318,7 +319,7 @@ export default function CrystalMesh({
         )}
 
       </group>
-    </Float>
+      </Float>
     </group>
   );
 }
