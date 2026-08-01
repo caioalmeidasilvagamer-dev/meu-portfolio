@@ -15,38 +15,36 @@ export const crystalConfig = {
   // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
   material: {
-    transmission: 0.98,
-    roughness: 0.28,
+    transmission: 1.0,
+    roughness: 0.05,
     thickness: 1.1,
-    ior: 1.31,
+    ior: 1.5,
     chromaticAberration: 0.015,
     anisotropy: 0.2,
     distortion: 0.05,
     distortionScale: 0.12,
     temporalDistortion: 0.02,
     normalScale: new THREE.Vector2(0.005, 0.005),
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.2,
-    attenuationColor: "#9ca6b2",
-    attenuationDistance: 2.5,
-    resolution: 128,  // 256→128: 4× menor render target; roughness máscara artifacts
-    samples: 4,       // mantido: já é o mínimo para antialiasing aceitável
-    backside: true,   // mantido: essencial para efeito de cristal translúcido
-    // transmissionSampler: true,  // alternativa: reusa buffer global (economia extra),
-                                    // mas cristais não "veem" outros objetos transmissivos atrás
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.1,
+    attenuationColor: "#d4e3f0",
+    attenuationDistance: 3.0,
+    resolution: 128,
+    samples: 4,
+    backside: true,
   },
 
   // Configuração do Conteúdo Interno Congelado (Inner Blob Core)
   innerBlob: {
     scaleFactor: 0.16,
     material: {
-      color: "#cfd7e0",
-      roughness: 0.85,
+      color: "#dce5ef",
+      roughness: 0.7,
       metalness: 0.0,
-      emissive: "#b8c6d4",
-      emissiveIntensity: 0.55,
+      emissive: "#c0d4e8",
+      emissiveIntensity: 0.4,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.5,
       depthWrite: true,
     },
     pointLight: {
