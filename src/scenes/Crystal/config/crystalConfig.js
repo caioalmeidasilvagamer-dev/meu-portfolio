@@ -13,17 +13,17 @@ export const crystalConfig = {
   // Configuração do Material de Transmissão do Cristal (MeshTransmissionMaterial)
   // NOTA: Cada instância renderiza um render target separado. Se múltiplos cristais
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
-  // ── Material de Transmissão — Cristal Branco-Gelo Claro ──
+  // ── Material de Transmissão — Cristal de Gelo Translúcido ──
   material: {
-    // Transmissão & Refração Física
-    transmission: 1,
-    thickness: 1.0,
+    // Transmissão & Refração — vidro com corpo visível
+    transmission: 0.95,
+    thickness: 2.0,
     ior: 1.45,
     backside: true,
-    backsideThickness: 1.0,
+    backsideThickness: 2.0,
 
-    // Superfície — fosca
-    roughness: 0.15,
+    // Superfície — fosca natural
+    roughness: 0.12,
     clearcoat: 0.0,
     clearcoatRoughness: 0.0,
 
@@ -34,13 +34,13 @@ export const crystalConfig = {
     distortionScale: 0,
     temporalDistortion: 0,
 
-    // Atenuação — branco puro, sem absorção
-    attenuationColor: "#ffffff",
-    attenuationDistance: 50,
-    color: "#ffffff",
+    // Atenuação — tom branco-gelo suave no corpo
+    attenuationColor: "#c8daf0",
+    attenuationDistance: 4,
+    color: "#e8f0f8",
 
-    // Reflexos — presentes
-    envMapIntensity: 1.2,
+    // Reflexos — revelam as facetas
+    envMapIntensity: 1.0,
 
     // Performance
     resolution: 1024,
