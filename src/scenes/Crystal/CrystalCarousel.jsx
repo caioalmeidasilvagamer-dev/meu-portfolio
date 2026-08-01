@@ -446,8 +446,8 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             <InsideCrystalEnvironment activeProject={activeProject || currentItem} />
           </group>
 
-          {/* Modelo 3D do cristal — mantido montado no Canvas para manter os shaders quentes no WebGL */}
-          <group key={index} visible={!activeProject} scale={[mobileScale, mobileScale, mobileScale]}>
+          {/* Modelo 3D do cristal — sempre montado para manter shaders quentes */}
+          <group key={index} scale={[mobileScale, mobileScale, mobileScale]}>
             <CrystalMesh
               modelPath={currentItem.modelPath || crystalConfig.defaultModel}
               projectData={currentItem}
@@ -455,6 +455,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               label={currentItem.label}
               sublabel={currentItem.sublabel}
               onClick={handleEnterProject}
+              isVisible={!activeProject}
             />
           </group>
 

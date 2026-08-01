@@ -77,6 +77,7 @@ export default function CrystalMesh({
   seed = 1,
   config = defaultConfig,
   onClick,
+  isVisible = true,
 }) {
   const groupRef = useRef();
   const mainMeshRef = useRef();
@@ -123,7 +124,7 @@ export default function CrystalMesh({
     };
     return {
       transformRotation: [rand(1) * 0.15, rand(2) * Math.PI, rand(3) * 0.15],
-      transformScale: 1.0 + rand(4) * 0.08,
+      transformScale: 2.0 + rand(4) * 0.12,
     };
   }, [seed]);
 
@@ -213,14 +214,14 @@ export default function CrystalMesh({
     <group position={[0, centerY, 0]}>
       <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
-        {/* 1. Conteúdo Interno — Objeto do Projeto */}
+        {/* 1. Conteúdo Interno — só visível quando câmera está dentro */}
         {baseGeometry && (
           <group
             ref={innerGroupRef}
             scale={transformScale * innerCfg.scaleFactor}
             rotation={transformRotation}
             renderOrder={-1}
-            visible={true}
+            visible={!isVisible}
           >
             <ProjectContent
               innerModel={projectData?.innerModel || null}
@@ -235,12 +236,13 @@ export default function CrystalMesh({
           </group>
         )}
 
-        {/* 2. Cristal Principal — Casca de Vidro Premium */}
+        {/* 2. Cristal Principal — Casca de Vidro (visível de fora, invisível de dentro) */}
         <mesh
           ref={mainMeshRef}
           geometry={animatedGeometry || baseGeometry}
           scale={transformScale}
           rotation={transformRotation}
+          visible={isVisible}
           onClick={(e) => {
             e.stopPropagation();
             if (onClick) onClick();
@@ -261,13 +263,14 @@ export default function CrystalMesh({
           <MeshTransmissionMaterial {...matCfg} />
         </mesh>
 
-        {/* 3. Fresnel / Rim Light — Bordas sutis */}
+        {/* 3. Fresnel / Rim Light — bordas sutis (visível de fora) */}
         {baseGeometry && (
           <mesh
             geometry={animatedGeometry || baseGeometry}
             scale={transformScale * 1.005}
             rotation={transformRotation}
             renderOrder={10}
+            visible={isVisible}
           >
             <shaderMaterial
               vertexShader={FresnelRimShader.vertexShader}
