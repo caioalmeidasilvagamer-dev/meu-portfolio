@@ -38,8 +38,8 @@ function useInnerBlobGeometry(radius = 1) {
 const FresnelRimShader = {
   uniforms: {
     uColor: { value: new THREE.Color("#ffffff") },
-    uPower: { value: 4.0 },
-    uIntensity: { value: 0.12 },
+    uPower: { value: 2.2 },
+    uIntensity: { value: 0.85 },
   },
   vertexShader: `
     varying vec3 vNormal;
@@ -273,7 +273,7 @@ export default function CrystalMesh({
           </group>
         )}
 
-        {/* 2. Cristal Principal — Casca de Gelo/Quartzo Translúcida e Fosca */}
+        {/* 2. Cristal Principal — Casca de Vidro Isolda 100% Transparente (Sem Escurecimento) */}
         <mesh
           ref={mainMeshRef}
           geometry={animatedGeometry || baseGeometry}
@@ -296,16 +296,25 @@ export default function CrystalMesh({
             isHovering.current = false;
           }}
         >
-          <MeshTransmissionMaterial {...matCfg} />
+          <meshPhysicalMaterial
+            color="#ffffff"
+            transparent={true}
+            opacity={0.14}
+            roughness={0.02}
+            metalness={0.0}
+            reflectivity={0.9}
+            clearcoat={1.0}
+            clearcoatRoughness={0.05}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
         </mesh>
 
-        {/* Wireframe removido */}
-
-        {/* 4. Fresnel / Rim Light */}
+        {/* 3. Fresnel / Rim Light — Bordas de Cristal Branco Reluzente */}
         {baseGeometry && (
           <mesh
             geometry={animatedGeometry || baseGeometry}
-            scale={transformScale * 1.01}
+            scale={transformScale * 1.005}
             rotation={transformRotation}
             renderOrder={10}
           >
