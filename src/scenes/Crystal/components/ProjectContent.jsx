@@ -24,7 +24,7 @@ function FallbackShape({ themeColor }) {
           roughness={0.18}
           metalness={0.65}
           emissive={themeColor}
-          emissiveIntensity={0.45}
+          emissiveIntensity={0.6}
         />
       </mesh>
     </Float>
@@ -51,7 +51,7 @@ export default function ProjectContent({
       {/* ── Pedestal holográfico anular ── */}
       <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.28, 0.52, 64]} />
-        <meshBasicMaterial color={themeColor} transparent opacity={0.35} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={themeColor} transparent opacity={0.35} side={THREE.DoubleSide} emissive={themeColor} emissiveIntensity={0.3} />
       </mesh>
       <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.57, 0.6, 64]} />
@@ -73,7 +73,7 @@ export default function ProjectContent({
       <Sparkles count={32} scale={[2, 2, 2]} size={2.2} speed={0.45} opacity={0.6} color={themeColor} />
 
       {/* ── Luz interna temática ── */}
-      <pointLight position={[0, 0.2, 0]} intensity={2.5} color={themeColor} distance={4} />
+      <pointLight position={[0, 0.2, 0]} intensity={3.5} color={themeColor} distance={4} />
     </group>
   );
 }

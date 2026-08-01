@@ -1,12 +1,13 @@
 // CrystalMesh.jsx
 // Componente 3D modular reutilizável para qualquer modelo de cristal (.glb)
 
-import { useRef, useMemo } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useMemo, useState, useEffect } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 import ProjectContent from "./ProjectContent";
+import CrystalEnvironment from "./CrystalEnvironment";
 
 /* ------------------------------------------------------------------ */
 /* 1. Hook principal do componente                                     */
@@ -87,6 +88,23 @@ export default function CrystalMesh({
   const currentMouseLocal = useRef(new THREE.Vector3());
   const isHovering = useRef(false);
   const currentActive = useRef(0.0);
+
+  // Textura do Environment dedicado para isolar a transmissão
+  const [envTexture, setEnvTexture] = useState(null);
+  const { scene } = useThree();
+
+  useEffect(() => {
+    // Captura a textura do Environment após ele montar
+    const checkEnv = () => {
+      if (scene.environment) {
+        setEnvTexture(scene.environment);
+      }
+    };
+    // Verifica imediatamente e após um frame
+    checkEnv();
+    const raf = requestAnimationFrame(checkEnv);
+    return () => cancelAnimationFrame(raf);
+  }, [scene]);
 
   // Carrega qualquer modelo .glb dinamicamente
   const { nodes } = useGLTF(modelPath);
@@ -180,7 +198,7 @@ export default function CrystalMesh({
           0.15 + r(i * 80) * 0.35,
           1,
         ],
-        opacity: 0.08 + r(i * 90) * 0.12,
+        opacity: 0.04 + r(i * 90) * 0.06,
       });
     }
     return result;
@@ -252,6 +270,7 @@ export default function CrystalMesh({
   });
 
   return (
+    <CrystalEnvironment>
     <group position={[0, centerY, 0]}>
       <Float speed={1.8} rotationIntensity={0.25} floatIntensity={0.4}>
       <group ref={groupRef}>
@@ -321,7 +340,7 @@ export default function CrystalMesh({
             isHovering.current = false;
           }}
         >
-          <MeshTransmissionMaterial {...matCfg} />
+          <MeshTransmissionMaterial {...matCfg} background={envTexture} />
         </mesh>
 
         {/* Wireframe removido */}
@@ -348,5 +367,6 @@ export default function CrystalMesh({
       </group>
     </Float>
     </group>
+    </CrystalEnvironment>
   );
 }

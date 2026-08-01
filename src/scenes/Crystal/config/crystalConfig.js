@@ -16,22 +16,23 @@ export const crystalConfig = {
   // forem visíveis simultaneamente, o custo GPU se multiplica proporcionalmente.
   material: {
     transmission: 1,
-    thickness: 0.8,
+    thickness: 2.5,
     roughness: 0.02,
-    ior: 1.544,
-    chromaticAberration: 0.03,
-    anisotropicBlur: 0.1,
+    ior: 1.52,
+    chromaticAberration: 0.015,
+    anisotropicBlur: 0.08,
     distortion: 0.0,
     distortionScale: 0.0,
     temporalDistortion: 0,
     normalScale: new THREE.Vector2(0.05, 0.05),
     clearcoat: 0.3,
     clearcoatRoughness: 0.1,
-    attenuationColor: "#f4f8ff",
-    attenuationDistance: 2.0,
+    attenuationColor: "#ffffff",
+    attenuationDistance: 8,
     resolution: 1024,
-    samples: 10,
+    samples: 12,
     backside: true,
+    backsideThickness: 2.5,
     side: THREE.DoubleSide,
   },
 
@@ -43,7 +44,7 @@ export const crystalConfig = {
       roughness: 0.7,
       metalness: 0.0,
       emissive: "#c0d4e8",
-      emissiveIntensity: 0.4,
+      emissiveIntensity: 0.6,
       transparent: true,
       opacity: 0.5,
       depthWrite: true,
@@ -67,13 +68,13 @@ export const crystalConfig = {
 
   // Configuração do Ambiente e Iluminação
   environment: {
-    backgroundColor: "#8f97a1",
+    backgroundColor: "#0a0a0f",
     fog: {
-      color: "#8f97a1",
+      color: "#0a0a0f",
       near: 10,
       far: 25,
     },
-    ambientLightIntensity: 0.35,
+    ambientLightIntensity: 0.15,
     particlesColor: "#ffffff",
   },
 };
