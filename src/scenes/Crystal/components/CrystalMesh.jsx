@@ -8,42 +8,6 @@ import * as THREE from "three";
 import { crystalConfig as defaultConfig } from "../config/crystalConfig";
 import ProjectContent from "./ProjectContent";
 
-/* ------------------------------------------------------------------ */
-/* 1. Textura de Ruído Suave para Aspecto Fosco (Frosted Surface)     */
-/* ------------------------------------------------------------------ */
-let GLOBAL_NOISE_TEX = null;
-function useNoiseTexture() {
-  return useMemo(() => {
-    if (GLOBAL_NOISE_TEX) return GLOBAL_NOISE_TEX;
-    const size = 256;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = size;
-    const ctx = canvas.getContext("2d");
-
-    const smallSize = 32;
-    const small = document.createElement("canvas");
-    small.width = small.height = smallSize;
-    const sctx = small.getContext("2d");
-    const imgData = sctx.createImageData(smallSize, smallSize);
-    for (let i = 0; i < imgData.data.length; i += 4) {
-      const v = 128 + (Math.sin(i * 12.9898) * 43758.5453 % 1 - 0.5) * 40;
-      imgData.data[i] = imgData.data[i + 1] = v;
-      imgData.data[i + 2] = 255;
-      imgData.data[i + 3] = 255;
-    }
-    sctx.putImageData(imgData, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(small, 0, 0, size, size);
-
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(3, 3);
-    // eslint-disable-next-line react-hooks/globals -- intentional global cache for texture reuse
-    GLOBAL_NOISE_TEX = tex;
-    return tex;
-  }, []);
-}
-
 let GLOBAL_INNER_BLOB_GEO = null;
 function useInnerBlobGeometry(radius = 1) {
   return useMemo(() => {
@@ -162,7 +126,6 @@ export default function CrystalMesh({
   }, [seed]);
 
   const innerGeometry = useInnerBlobGeometry();
-  const noiseMap = useNoiseTexture();
 
   const hoverCfg = config.hoverEffect || defaultConfig.hoverEffect;
   const matCfg = config.material || defaultConfig.material;
@@ -294,7 +257,7 @@ export default function CrystalMesh({
             isHovering.current = false;
           }}
         >
-          <MeshTransmissionMaterial {...matCfg} normalMap={noiseMap} />
+          <MeshTransmissionMaterial {...matCfg} />
         </mesh>
 
         {/* Wireframe removido */}
