@@ -218,7 +218,7 @@ export default function CrystalMesh({
             scale={transformScale * innerCfg.scaleFactor}
             rotation={transformRotation}
             renderOrder={-1}
-            visible={false}
+            visible={true}
           >
             {/* ProjectContent usa GLB do projeto ou fallback geométrico */}
             <ProjectContent
