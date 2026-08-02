@@ -12,16 +12,52 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (prevent accidental commits of secrets)
+.env
+.env.*
+!.env.example
+
+# GSD planning artifacts
+.planning/
+
 # Media files (screen recordings, large assets)
 *.mp4
 *.mov
 *.avi
+*.webm
+
+# Design files (heavy, not code)
+*.psd
+*.ai
+*.sketch
+*.fig
+*.xd
+
+# Image assets (large files that shouldn't bloat the repo)
+src/assets/**/*.png
+src/assets/**/*.jpg
+src/assets/**/*.jpeg
+src/assets/**/*.webp
+src/assets/**/*.gif
+
+# 3D model source files (public/ models are needed, src/assets/ are extras)
+src/assets/**/*.glb
+src/assets/**/*.gltf
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# macOS
+.DS_Store
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
