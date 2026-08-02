@@ -68,7 +68,9 @@ export default function ProjectContent({
       ) : null}
 
       {/* ── Partículas temáticas ── */}
-      <Sparkles count={16} scale={[2, 2, 2]} size={2.2} speed={0.45} opacity={0.6} color={themeColor} />
+      {innerModel && (
+        <Sparkles count={16} scale={[2, 2, 2]} size={2.2} speed={0.45} opacity={0.6} color={themeColor} />
+      )}
 
       {/* ── Luz interna temática ── */}
       <pointLight position={[0, 0.2, 0]} intensity={2.5} color={themeColor} distance={4} />
