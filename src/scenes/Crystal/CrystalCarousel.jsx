@@ -9,6 +9,7 @@ import * as THREE from "three";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
 import ShaderBackground from "../../components/ui/ShaderBackground";
+import { GlassButton } from "../../components/ui/GlassButton";
 import { crystalConfig } from "./config/crystalConfig";
 import useViewport from "../../hooks/useViewport";
 
@@ -413,7 +414,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       {/* Botões de Navegação Glassmorphic do Carrossel */}
       {!activeProject && (
         <>
-          <button
+          <GlassButton
             onClick={prev}
             disabled={index === 0}
             style={{
@@ -423,24 +424,13 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               transform: "translateY(-50%)",
               width: isMobile ? 44 : 50,
               height: isMobile ? 44 : 50,
-              borderRadius: "50%",
-              background: "rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              color: index === 0 ? "rgba(255, 255, 255, 0.3)" : "#ffffff",
-              fontSize: isMobile ? 18 : 22,
-              cursor: index === 0 ? "default" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.3s ease",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+              fontSize: isMobile ? 20 : 24,
               zIndex: 20,
             }}
           >
-            ‹
-          </button>
-          <button
+            &lsaquo;
+          </GlassButton>
+          <GlassButton
             onClick={next}
             disabled={index === items.length - 1}
             style={{
@@ -450,23 +440,12 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               transform: "translateY(-50%)",
               width: isMobile ? 44 : 50,
               height: isMobile ? 44 : 50,
-              borderRadius: "50%",
-              background: "rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(255, 255, 255, 0.25)",
-              color: index === items.length - 1 ? "rgba(255, 255, 255, 0.3)" : "#ffffff",
-              fontSize: isMobile ? 18 : 22,
-              cursor: index === items.length - 1 ? "default" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.3s ease",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+              fontSize: isMobile ? 20 : 24,
               zIndex: 20,
             }}
           >
-            ›
-          </button>
+            &rsaquo;
+          </GlassButton>
         </>
       )}
 
