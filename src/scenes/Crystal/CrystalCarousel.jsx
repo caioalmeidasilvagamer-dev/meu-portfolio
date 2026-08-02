@@ -321,7 +321,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   return (
     <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       {/* Smoke shader background */}
-      <ShaderBackground />
+      <ShaderBackground className="fixed inset-0 -z-10 pointer-events-none" />
 
       {/* Overlay de Passagem de Refração de Lente (Transição Fluida) */}
       <div

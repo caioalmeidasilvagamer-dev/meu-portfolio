@@ -1,12 +1,9 @@
-// ShaderBackground.jsx
-// "Smoke" shader do 21st.dev Shader Builder — WebGL1 puro, zero dependências
-
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react"
 
 const VERT = `attribute vec2 a_position;
 void main() {
   gl_Position = vec4(a_position, 0.0, 1.0);
-}`;
+}`
 
 const FRAG = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -174,6 +171,32 @@ void main() {
   vec2 screenUv = uv;
   vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution.xy)
     / min(u_resolution.x, u_resolution.y);
+  float cursorMask = 0.0;
+
+  if (u_cursorPresence > 0.001) {
+    vec2 cursor = (0.5 * u_mouse * u_resolution.xy)
+      / min(u_resolution.x, u_resolution.y);
+    vec2 cursorDelta = p - cursor;
+    if (u_cursorEffect < 0.5) {
+      p += cursor * u_cursorPresence * u_cursorStrength * 0.55;
+    } else {
+      float cursorDistance = length(cursorDelta);
+      vec2 cursorDirection = cursorDelta / max(cursorDistance, 0.0001);
+      cursorMask = u_cursorPresence
+        * (1.0 - smoothstep(0.0, u_cursorRadius, cursorDistance));
+      if (u_cursorEffect < 1.5) {
+        p -= cursorDirection * cursorMask * u_cursorStrength * 0.24;
+      } else if (u_cursorEffect < 2.5) {
+        float cursorAngle = cursorMask * u_cursorStrength * 2.2;
+        float cc = cos(cursorAngle), cs = sin(cursorAngle);
+        p = cursor + mat2(cc, -cs, cs, cc) * cursorDelta;
+      } else if (u_cursorEffect < 3.5) {
+        float ripple = sin(
+          cursorDistance / max(u_cursorRadius, 0.001) * 18.0 - u_time * 5.0);
+        p -= cursorDirection * ripple * cursorMask * u_cursorStrength * 0.07;
+      }
+    }
+  }
 
   uv = p * min(u_resolution.x, u_resolution.y) / u_resolution.xy + 0.5;
   p *= u_scale;
@@ -189,7 +212,6 @@ void main() {
       fbm(p * u_detail + u_seed),
       fbm(p * u_detail + vec2(5.2, 1.3))) - 0.5);
   }
-
   vec3 col;
   if (u_blur > 0.0) {
     float e = u_blur;
@@ -203,7 +225,6 @@ void main() {
   } else {
     col = shade(uv, p, u_time);
   }
-
   if (abs(u_contrast - 1.0) > 0.0001)
     col = (col - 0.5) * u_contrast + 0.5;
   if (abs(u_saturation - 1.0) > 0.0001) {
@@ -218,86 +239,83 @@ void main() {
     float vd = length(screenUv - 0.5) * 1.41421356;
     col *= 1.0 - u_vignette * smoothstep(0.35, 1.0, vd);
   }
+  if (u_cursorPresence > 0.001 && u_cursorEffect > 3.5)
+    col += (vec3(0.18) + col * 0.12) * cursorMask * u_cursorStrength;
   if (u_grain > 0.0001)
     col += (grainHash(
       gl_FragCoord.xy + vec2(u_seed * 17.0, u_seed * 31.0)) - 0.5) * u_grain;
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
-`;
+`
 
 const UNIFORMS = {
-  colors: [
-    [0.0627, 0.0627, 0.0627],
-    [0.9608, 0.9608, 0.9608],
-    [0.6902, 0.6902, 0.6902],
-    [0.2275, 0.2275, 0.2275],
-    [0.2275, 0.2275, 0.2275],
-    [0.2275, 0.2275, 0.2275],
-    [0.2275, 0.2275, 0.2275],
-    [0.2275, 0.2275, 0.2275],
-  ],
+  colors: [[0.06274509803921569,0.06274509803921569,0.06274509803921569],[0.9607843137254902,0.9607843137254902,0.9607843137254902],[0.6901960784313725,0.6901960784313725,0.6901960784313725],[0.22745098039215686,0.22745098039215686,0.22745098039215686],[0.22745098039215686,0.22745098039215686,0.22745098039215686],[0.22745098039215686,0.22745098039215686,0.22745098039215686],[0.22745098039215686,0.22745098039215686,0.22745098039215686],[0.22745098039215686,0.22745098039215686,0.22745098039215686]],
   colorCount: 4,
-  scale: 1.96,
-  intensity: 0.75,
-  paramA: 0.5,
-  warp: 0.0,
-  detail: 2.4,
+  scale: 1.960,
+  intensity: 0.750,
+  paramA: 0.500,
+  warp: 0.000,
+  detail: 2.400,
   contrast: 1.194,
-  brightness: 0.0,
-  saturation: 1.0,
-  hue: 0.0,
-  vignette: 0.0,
-  blur: 0.0,
+  brightness: 0.000,
+  saturation: 1.000,
+  hue: 0.0000,
+  vignette: 0.000,
+  blur: 0.0000,
   grain: 0.003,
   seed: 8835.0,
-  rotate: 0.0,
-  offsetX: 0.0,
-  offsetY: 0.0,
-  drift: 0.0,
+  rotate: 0.0000,
+  offsetX: 0.000,
+  offsetY: 0.000,
+  drift: 0.000,
   cursorEnabled: false,
   cursorEffect: 2.0,
-  cursorStrength: 0.65,
-  cursorRadius: 0.46,
+  cursorStrength: 0.650,
+  cursorRadius: 0.460,
   oklab: 0.0,
   timeScale: 0.632,
-};
+}
 
-export default function ShaderBackground() {
-  const canvasRef = useRef(null);
+const pendingContextReleases = new WeakMap()
+
+export default function ShaderBackground({ className }) {
+  const canvasRef = useRef(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const gl = canvas.getContext("webgl", { antialias: false });
-    if (!gl) return;
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const pendingRelease = pendingContextReleases.get(canvas)
+    if (pendingRelease !== undefined) window.clearTimeout(pendingRelease)
+    pendingContextReleases.delete(canvas)
+    const gl = canvas.getContext("webgl", { antialias: false })
+    if (!gl) return
 
     const compile = (type, src) => {
-      const s = gl.createShader(type);
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      return s;
-    };
-    const program = gl.createProgram();
-    const vertexShader = compile(gl.VERTEX_SHADER, VERT);
-    const fragmentShader = compile(gl.FRAGMENT_SHADER, FRAG);
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    gl.deleteShader(vertexShader);
-    gl.deleteShader(fragmentShader);
-    gl.useProgram(program);
+      const s = gl.createShader(type)
+      gl.shaderSource(s, src)
+      gl.compileShader(s)
+      return s
+    }
+    const program = gl.createProgram()
+    const vertexShader = compile(gl.VERTEX_SHADER, VERT)
+    const fragmentShader = compile(gl.FRAGMENT_SHADER, FRAG)
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+    gl.deleteShader(vertexShader)
+    gl.deleteShader(fragmentShader)
+    gl.useProgram(program)
 
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    const buf = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf)
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([-1, -1, 3, -1, -1, 3]),
       gl.STATIC_DRAW,
-    );
-    const loc = gl.getAttribLocation(program, "a_position");
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    )
+    const loc = gl.getAttribLocation(program, "a_position")
+    gl.enableVertexAttribArray(loc)
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0)
 
     const uni = {
       colors: gl.getUniformLocation(program, "u_colors"),
@@ -308,112 +326,232 @@ export default function ShaderBackground() {
       transform: gl.getUniformLocation(program, "u_transform"),
       space: gl.getUniformLocation(program, "u_space"),
       cursor: gl.getUniformLocation(program, "u_cursor"),
-    };
+    }
+    gl.uniform3fv(uni.colors, new Float32Array(UNIFORMS.colors.flat()))
+    gl.uniform4f(
+      uni.shape,
+      UNIFORMS.scale,
+      UNIFORMS.intensity,
+      UNIFORMS.paramA,
+      UNIFORMS.warp,
+    )
+    gl.uniform4f(
+      uni.surface,
+      UNIFORMS.detail,
+      UNIFORMS.contrast,
+      UNIFORMS.brightness,
+      UNIFORMS.saturation,
+    )
+    gl.uniform4f(
+      uni.finish,
+      UNIFORMS.hue,
+      UNIFORMS.vignette,
+      UNIFORMS.blur,
+      UNIFORMS.grain,
+    )
+    gl.uniform4f(
+      uni.transform,
+      UNIFORMS.seed,
+      UNIFORMS.rotate,
+      UNIFORMS.drift,
+      UNIFORMS.oklab,
+    )
+    gl.uniform4f(
+      uni.cursor,
+      0,
+      UNIFORMS.cursorEffect,
+      UNIFORMS.cursorStrength,
+      UNIFORMS.cursorRadius,
+    )
 
-    const colorsFlat = new Float32Array(UNIFORMS.colors.flat());
-    gl.uniform3fv(uni.colors, colorsFlat);
-    gl.uniform4f(uni.shape, UNIFORMS.scale, UNIFORMS.intensity, UNIFORMS.paramA, UNIFORMS.warp);
-    gl.uniform4f(uni.surface, UNIFORMS.detail, UNIFORMS.contrast, UNIFORMS.brightness, UNIFORMS.saturation);
-    gl.uniform4f(uni.finish, UNIFORMS.hue, UNIFORMS.vignette, UNIFORMS.blur, UNIFORMS.grain);
-    gl.uniform4f(uni.transform, UNIFORMS.seed, UNIFORMS.rotate, UNIFORMS.drift, UNIFORMS.oklab);
-    gl.uniform4f(uni.cursor, 0, UNIFORMS.cursorEffect, UNIFORMS.cursorStrength, UNIFORMS.cursorRadius);
-
-    let raf = 0;
-    let visible = document.visibilityState === "visible";
-    let inView = true;
-    let disposed = false;
-    const start = performance.now();
-    const timeAnimated = Math.abs(UNIFORMS.timeScale) > 0.0001;
+    let targetX = 0
+    let targetY = 0
+    let targetPresence = 0
+    let mouseX = 0
+    let mouseY = 0
+    let cursorPresence = 0
+    let pointerKnown = false
+    let pointerClientX = 0
+    let pointerClientY = 0
+    let bounds = canvas.getBoundingClientRect()
+    let raf = 0
+    let lastNow = null
+    let visible = document.visibilityState === "visible"
+    let inView = true
+    let disposed = false
+    const start = performance.now()
+    const timeAnimated = Math.abs(UNIFORMS.timeScale) > 0.0001
 
     const resizeCanvas = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const rect = canvas.getBoundingClientRect();
-      const rawWidth = Math.max(1, Math.round(rect.width * dpr));
-      const rawHeight = Math.max(1, Math.round(rect.height * dpr));
-      const pixelScale = Math.min(1, Math.sqrt(2000000 / Math.max(1, rawWidth * rawHeight)));
-      const width = Math.max(1, Math.round(rawWidth * pixelScale));
-      const height = Math.max(1, Math.round(rawHeight * pixelScale));
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const rawWidth = Math.max(1, Math.round(bounds.width * dpr))
+      const rawHeight = Math.max(1, Math.round(bounds.height * dpr))
+      const pixelScale = Math.min(
+        1,
+        Math.sqrt(2_000_000 / Math.max(1, rawWidth * rawHeight)),
+      )
+      const width = Math.max(1, Math.round(rawWidth * pixelScale))
+      const height = Math.max(1, Math.round(rawHeight * pixelScale))
       if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
+        canvas.width = width
+        canvas.height = height
+        gl.viewport(0, 0, width, height)
       }
-    };
+    }
 
     function requestRender() {
       if (!disposed && visible && inView && raf === 0) {
-        raf = requestAnimationFrame(render);
+        raf = requestAnimationFrame(render)
       }
     }
 
+    const updatePointerTarget = () => {
+      if (!pointerKnown) return
+      if (bounds.width === 0 || bounds.height === 0) return
+      const inside =
+        pointerClientX >= bounds.left &&
+        pointerClientX <= bounds.right &&
+        pointerClientY >= bounds.top &&
+        pointerClientY <= bounds.bottom
+      if (!inside) {
+        targetPresence = 0
+        requestRender()
+        return
+      }
+      const nextX = ((pointerClientX - bounds.left) / bounds.width) * 2 - 1
+      const nextY = -(((pointerClientY - bounds.top) / bounds.height) * 2 - 1)
+      if (targetPresence === 0 && cursorPresence < 0.01) {
+        mouseX = nextX
+        mouseY = nextY
+      }
+      targetX = nextX
+      targetY = nextY
+      targetPresence = 1
+      requestRender()
+    }
+    const onPointerMove = (event) => {
+      pointerKnown = true
+      pointerClientX = event.clientX
+      pointerClientY = event.clientY
+      bounds = canvas.getBoundingClientRect()
+      updatePointerTarget()
+    }
+    const onPointerLeave = () => {
+      pointerKnown = false
+      targetPresence = 0
+      requestRender()
+    }
     const updateLayout = () => {
-      resizeCanvas();
-      requestRender();
-    };
+      bounds = canvas.getBoundingClientRect()
+      resizeCanvas()
+      updatePointerTarget()
+      requestRender()
+    }
+    window.addEventListener("resize", updateLayout)
+    if (UNIFORMS.cursorEnabled) {
+      window.addEventListener("pointermove", onPointerMove, { passive: true })
+      window.addEventListener("pointercancel", onPointerLeave)
+      window.addEventListener("scroll", updateLayout, true)
+      window.addEventListener("blur", onPointerLeave)
+      document.documentElement.addEventListener("pointerleave", onPointerLeave)
+    }
 
-    window.addEventListener("resize", updateLayout);
-
-    const resizeObserver = new ResizeObserver(updateLayout);
-    resizeObserver.observe(canvas);
-
+    const resizeObserver = new ResizeObserver(updateLayout)
+    resizeObserver.observe(canvas)
     const intersectionObserver = new IntersectionObserver(([entry]) => {
-      inView = entry?.isIntersecting ?? true;
-      if (inView) requestRender();
+      inView = entry?.isIntersecting ?? true
+      if (inView) requestRender()
       else if (raf !== 0) {
-        cancelAnimationFrame(raf);
-        raf = 0;
+        cancelAnimationFrame(raf)
+        raf = 0
+        lastNow = null
       }
-    });
-    intersectionObserver.observe(canvas);
-
+    })
+    intersectionObserver.observe(canvas)
     const onVisibilityChange = () => {
-      visible = document.visibilityState === "visible";
-      if (visible) requestRender();
+      visible = document.visibilityState === "visible"
+      if (visible) requestRender()
       else if (raf !== 0) {
-        cancelAnimationFrame(raf);
-        raf = 0;
+        cancelAnimationFrame(raf)
+        raf = 0
+        lastNow = null
       }
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange)
 
     function render(now) {
-      raf = 0;
-      if (disposed || !visible || !inView) return;
-      resizeCanvas();
-      const width = canvas.width;
-      const height = canvas.height;
-      gl.uniform4f(uni.scene, width, height, ((now - start) / 1000) * UNIFORMS.timeScale, UNIFORMS.colorCount);
-      gl.uniform4f(uni.space, UNIFORMS.offsetX, UNIFORMS.offsetY, 0, 0);
-      gl.uniform4f(uni.cursor, 0, UNIFORMS.cursorEffect, UNIFORMS.cursorStrength, UNIFORMS.cursorRadius);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      if (timeAnimated) requestRender();
+      raf = 0
+      if (disposed || !visible || !inView) return
+      const dt = lastNow === null ? 0 : Math.min((now - lastNow) / 1000, 0.1)
+      lastNow = now
+      const follow = 1 - Math.exp(-12 * dt)
+      mouseX += (targetX - mouseX) * follow
+      mouseY += (targetY - mouseY) * follow
+      cursorPresence += (targetPresence - cursorPresence) * follow
+      resizeCanvas()
+      const width = canvas.width
+      const height = canvas.height
+      gl.uniform4f(
+        uni.scene,
+        width,
+        height,
+        ((now - start) / 1000) * UNIFORMS.timeScale,
+        UNIFORMS.colorCount,
+      )
+      gl.uniform4f(
+        uni.space,
+        UNIFORMS.offsetX,
+        UNIFORMS.offsetY,
+        mouseX,
+        mouseY,
+      )
+      gl.uniform4f(
+        uni.cursor,
+        UNIFORMS.cursorEnabled ? cursorPresence : 0,
+        UNIFORMS.cursorEffect,
+        UNIFORMS.cursorStrength,
+        UNIFORMS.cursorRadius,
+      )
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+      const pointerSettling =
+        Math.abs(targetX - mouseX) > 0.001 ||
+        Math.abs(targetY - mouseY) > 0.001 ||
+        Math.abs(targetPresence - cursorPresence) > 0.001
+      if (timeAnimated || pointerSettling) requestRender()
+      else lastNow = null
     }
-    requestRender();
-
+    requestRender()
     return () => {
-      disposed = true;
-      cancelAnimationFrame(raf);
-      resizeObserver.disconnect();
-      intersectionObserver.disconnect();
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("resize", updateLayout);
-      gl.deleteBuffer(buf);
-      gl.deleteProgram(program);
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
-    };
-  }, []);
+      disposed = true
+      cancelAnimationFrame(raf)
+      resizeObserver.disconnect()
+      intersectionObserver.disconnect()
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+      window.removeEventListener("resize", updateLayout)
+      if (UNIFORMS.cursorEnabled) {
+        window.removeEventListener("pointermove", onPointerMove)
+        window.removeEventListener("pointercancel", onPointerLeave)
+        window.removeEventListener("scroll", updateLayout, true)
+        window.removeEventListener("blur", onPointerLeave)
+        document.documentElement.removeEventListener(
+          "pointerleave",
+          onPointerLeave,
+        )
+      }
+      gl.deleteBuffer(buf)
+      gl.deleteProgram(program)
+      const releaseTimer = window.setTimeout(() => {
+        if (pendingContextReleases.get(canvas) !== releaseTimer) return
+        pendingContextReleases.delete(canvas)
+        gl.getExtension("WEBGL_lose_context")?.loseContext()
+        canvas.width = 1
+        canvas.height = 1
+      }, 0)
+      pendingContextReleases.set(canvas, releaseTimer)
+    }
+  }, [])
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        display: "block",
-        zIndex: 0,
-      }}
-    />
-  );
+    <canvas ref={canvasRef} className={className} style={{ display: "block", width: "100%", height: "100%" }} />
+  )
 }
