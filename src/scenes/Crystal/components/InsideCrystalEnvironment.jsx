@@ -123,7 +123,7 @@ export default function InsideCrystalEnvironment({ activeProject }) {
 
   return (
     <mesh ref={skyRef}>
-      <sphereGeometry args={[45, 64, 32]} />
+      <sphereGeometry args={[45, 32, 16]} />
       <meshBasicMaterial map={skyTex} side={THREE.BackSide} />
     </mesh>
   );

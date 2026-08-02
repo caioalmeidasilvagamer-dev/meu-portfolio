@@ -1,14 +1,14 @@
 // CrystalCarousel.jsx
 // Carrossel de Cristais 3D com Voo de Câmera Contínuo (60 FPS, Zero-Lag, Shader-Warm)
 
-import { Suspense, useState, useCallback, useRef, useEffect } from "react";
+import React, { Suspense, useState, useCallback, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, Lightformer, Sparkles, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
+import { Environment, Lightformer, Sparkles, useGLTF, useProgress } from "@react-three/drei";
 import gsap from "gsap";
 import * as THREE from "three";
 import CrystalMesh from "./components/CrystalMesh";
 import InsideCrystalEnvironment from "./components/InsideCrystalEnvironment";
-import LavaBackground from "./components/LavaBackground";
+import ShaderBackground from "../../components/ui/ShaderBackground";
 import { crystalConfig } from "./config/crystalConfig";
 import useViewport from "../../hooks/useViewport";
 
@@ -50,7 +50,7 @@ function LoaderHUD({ text, barWidth, onFadeEnd }) {
         color: "#ffffff",
         fontFamily: "'Courier New', Courier, monospace",
         background: "rgba(14, 22, 32, 0.45)",
-        backdropFilter: "blur(8px)",
+        backdropFilter: "blur(6px)",
         zIndex: 50,
         pointerEvents: "none",
         opacity: fadingOut ? 0 : 1,
@@ -127,46 +127,22 @@ function ShaderCompiler({ onCompiled, onCompileStart, index }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 1. Controlador de Câmera & Controls — Transição GSAP Fluida         */
+/* 1. Controlador de Câmera — Transição GSAP Fluida                    */
 /* ------------------------------------------------------------------ */
-function CameraController({ activeProject, isTransitioning, controlsRef }) {
-  // Configura os limites do OrbitControls de acordo com o estado
-  useEffect(() => {
-    if (!controlsRef.current) return;
-    const controls = controlsRef.current;
-
-    if (isTransitioning) {
-      controls.enabled = false;
-    } else if (activeProject) {
-      controls.enabled = true;
-      controls.minPolarAngle = 0;
-      controls.maxPolarAngle = Math.PI;
-      controls.rotateSpeed = 0.5;
-    } else {
-      controls.enabled = true;
-      controls.minPolarAngle = Math.PI / 2;
-      controls.maxPolarAngle = Math.PI / 2;
-      controls.rotateSpeed = 0.8;
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
-  }, [activeProject, isTransitioning, controlsRef]);
-
+const CameraController = React.memo(function CameraController() {
   return null;
-}
-
+});
 /* ------------------------------------------------------------------ */
-/* 2. Campo de Partículas Elegantes                                    */
-/* ------------------------------------------------------------------ */
-function StudioParticles() {
+const StudioParticles = React.memo(function StudioParticles({ isMobile }) {
+  const count = isMobile ? 40 : 80;
   return (
     <group>
-      <Sparkles count={80} scale={[14, 8, 10]} size={2.5} speed={0.3} opacity={0.7} color="#ffffff" />
-      <Sparkles count={70} scale={[16, 10, 12]} size={4.0} speed={0.2} opacity={0.6} color="#ffffff" />
-      <Sparkles count={80} scale={[12, 7, 8]} size={2.8} speed={0.45} opacity={0.9} color="#ffffff" />
+      <Sparkles count={count} scale={[14, 8, 10]} size={2.5} speed={0.3} opacity={0.7} color="#ffffff" />
+      <Sparkles count={Math.floor(count * 0.875)} scale={[16, 10, 12]} size={4.0} speed={0.2} opacity={0.6} color="#ffffff" />
+      <Sparkles count={count} scale={[12, 7, 8]} size={2.8} speed={0.45} opacity={0.9} color="#ffffff" />
     </group>
   );
-}
+});
 
 /* ------------------------------------------------------------------ */
 /* 3. Componente Carrossel de Cristais Principal                     */
@@ -222,7 +198,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [shadersCompiled, setShadersCompiled] = useState(false);
 
-  const controlsRef = useRef(null);
   const lensPassRef = useRef(null);
   const cameraRef = useRef(null);
 
@@ -243,8 +218,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
     setIsTransitioning(true);
     const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (controls) controls.enabled = false;
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -294,12 +267,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
 
     setIsTransitioning(true);
     const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (controls) {
-      controls.enabled = false;
-      controls.target.set(0, 0, 0);
-      controls.update();
-    }
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -344,15 +311,6 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
       onUpdate: () => camera.updateProjectionMatrix(),
     }, 0.35);
 
-    // 4. Reativa controls com estado limpo
-    tl.call(() => {
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.enabled = true;
-        controls.update();
-      }
-    }, null, 1.8);
-
     tl.to(lensPassRef.current, {
       opacity: 0,
       duration: 0.6,
@@ -361,9 +319,9 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
   }, [activeProject, isTransitioning]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#8f97a1", overflow: "hidden" }}>
-      {/* Fundo dinâmico estilo abajur de lava */}
-      <LavaBackground />
+    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
+      {/* Smoke shader background */}
+      <ShaderBackground />
 
       {/* Overlay de Passagem de Refração de Lente (Transição Fluida) */}
       <div
@@ -395,11 +353,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         }}
       >
         {/* Renderiza instantaneamente no frame 1 (0ms de atraso) */}
-        <CameraController
-          activeProject={activeProject}
-          isTransitioning={isTransitioning}
-          controlsRef={controlsRef}
-        />
+        <CameraController />
         <ambientLight intensity={0.6} />
 
         {/* Partículas e névoa da cena externa */}
@@ -412,16 +366,8 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               crystalConfig.environment.fog.far,
             ]}
           />
-          <StudioParticles />
+          <StudioParticles isMobile={isMobile} />
         </group>
-
-        {/* Instância única de OrbitControls — pronta no frame 1 */}
-        <OrbitControls
-          ref={controlsRef}
-          enableZoom={false}
-          enablePan={false}
-          makeDefault
-        />
 
         {/* Apenas os assets pesados de 3D/Ambiente ficam dentro do Suspense */}
         <Suspense fallback={null}>
@@ -447,7 +393,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
           </group>
 
           {/* Modelo 3D do cristal — sempre montado para manter shaders quentes */}
-          <group key={index} scale={[mobileScale, mobileScale, mobileScale]}>
+          <group scale={[mobileScale, mobileScale, mobileScale]}>
             <CrystalMesh
               modelPath={currentItem.modelPath || crystalConfig.defaultModel}
               projectData={currentItem}
@@ -479,7 +425,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               height: isMobile ? 44 : 50,
               borderRadius: "50%",
               background: "rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(12px)",
+              backdropFilter: "blur(8px)",
               border: "1px solid rgba(255, 255, 255, 0.25)",
               color: index === 0 ? "rgba(255, 255, 255, 0.3)" : "#ffffff",
               fontSize: isMobile ? 18 : 22,
@@ -506,7 +452,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
               height: isMobile ? 44 : 50,
               borderRadius: "50%",
               background: "rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(12px)",
+              backdropFilter: "blur(8px)",
               border: "1px solid rgba(255, 255, 255, 0.25)",
               color: index === items.length - 1 ? "rgba(255, 255, 255, 0.3)" : "#ffffff",
               fontSize: isMobile ? 18 : 22,
@@ -537,7 +483,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
             color: "#ffffff",
             fontFamily: "'Courier New', Courier, monospace",
             background: "rgba(8, 14, 22, 0.65)",
-            backdropFilter: "blur(18px)",
+            backdropFilter: "blur(10px)",
             border: `1px solid ${activeProject.themeColor || "#7eb8e0"}55`,
             borderRadius: "10px",
             padding: isMobile ? "16px 18px" : "24px 28px",

@@ -1,7 +1,7 @@
 // CrystalMesh.jsx
 // Componente 3D modular — cristal GLB com material de vidro premium
 
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { MeshTransmissionMaterial, Float, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -106,6 +106,13 @@ export default function CrystalMesh({
     if (!baseGeometry) return null;
     return baseGeometry.clone();
   }, [baseGeometry]);
+
+  // Dispose cloned geometry on unmount
+  useEffect(() => {
+    return () => {
+      animatedGeometry?.dispose();
+    };
+  }, [animatedGeometry]);
 
   const basePositions = useMemo(() => {
     if (!baseGeometry) return null;

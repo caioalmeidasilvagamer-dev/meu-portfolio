@@ -1,7 +1,7 @@
 // ProjectContent.jsx
 // Conteúdo interno do cristal: modelo 3D do projeto ou fallback visual temático
 
-import { useRef, useMemo, Suspense } from "react";
+import { useRef, useMemo, useEffect, Suspense } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, Float, Sparkles } from "@react-three/drei";
 
@@ -9,6 +9,7 @@ import { useGLTF, Float, Sparkles } from "@react-three/drei";
 function GLBModel({ src, scale }) {
   const { scene } = useGLTF(src);
   const cloned = useMemo(() => scene.clone(true), [scene]);
+  useEffect(() => () => { cloned?.traverse((o) => { o.geometry?.dispose(); o.material?.dispose?.(); }); }, [cloned]);
   return <primitive object={cloned} scale={scale} />;
 }
 
