@@ -65,9 +65,7 @@ export default function ProjectContent({
             <GLBModel src={innerModel} scale={innerScale} />
           </Float>
         </Suspense>
-      ) : (
-        <FallbackShape themeColor={themeColor} />
-      )}
+      ) : null}
 
       {/* ── Partículas temáticas ── */}
       <Sparkles count={16} scale={[2, 2, 2]} size={2.2} speed={0.45} opacity={0.6} color={themeColor} />
