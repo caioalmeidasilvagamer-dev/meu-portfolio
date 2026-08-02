@@ -372,7 +372,7 @@ export default function CrystalCarousel({ items: customItems, onEnter: customOnE
         {/* Apenas os assets pesados de 3D/Ambiente ficam dentro do Suspense */}
         <Suspense fallback={null}>
           {/* Ambiente — fundo claro para cristal branco-gelo */}
-          <Environment resolution={512}>
+          <Environment resolution={512} background={false}>
             <mesh scale={50}>
               <sphereGeometry args={[1, 32, 32]} />
               <meshBasicMaterial color="#d0d8e4" side={THREE.BackSide} />
