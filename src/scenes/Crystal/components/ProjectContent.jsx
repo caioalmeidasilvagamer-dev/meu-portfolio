@@ -4,7 +4,6 @@
 import { useRef, useMemo, Suspense } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, Float, Sparkles } from "@react-three/drei";
-import * as THREE from "three";
 
 /* ── Wrapper que carrega GLB de forma segura ── */
 function GLBModel({ src, scale }) {
@@ -48,16 +47,6 @@ export default function ProjectContent({
 
   return (
     <group ref={groupRef}>
-      {/* ── Pedestal holográfico anular ── */}
-      <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.28, 0.52, 64]} />
-        <meshBasicMaterial color={themeColor} transparent opacity={0.35} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, -0.62, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.57, 0.6, 64]} />
-        <meshBasicMaterial color={themeColor} transparent opacity={0.18} side={THREE.DoubleSide} />
-      </mesh>
-
       {/* ── Conteúdo: GLB ou fallback geométrico temático ── */}
       {innerModel ? (
         <Suspense fallback={<FallbackShape themeColor={themeColor} />}>
